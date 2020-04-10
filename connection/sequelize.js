@@ -4,6 +4,7 @@ const UserModel = require("../models/user");
 const AccountModel = require("../models/account");
 const MembersModel = require("../models/members");
 const AdminModel = require("../models/admins");
+const UserTypeModel = require("../models/user_types");
 
 
 const sequelize = require('./index')
@@ -13,7 +14,13 @@ models.User = UserModel(sequelize, Sequelize)
 models.Account = AccountModel(sequelize, Sequelize)
 models.Members = MembersModel(sequelize, Sequelize)
 models.Admin = AdminModel(sequelize, Sequelize)
+models.UserType = UserTypeModel(sequelize, Sequelize)
 
+models.User.belongsTo(models.UserType, {
+    onDelete: 'CASCADE',
+    foreignKey: 'user_type_id',
+    as: 'user_type'
+});
 models.Members.belongsTo(models.User, {
         onDelete: 'CASCADE',
         foreignKey: 'user_id',

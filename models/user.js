@@ -1,6 +1,6 @@
 /* jshint indent: 2 */
 
-module.exports = function (sequelize, DataTypes) {
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('user', {
     'user_id': {
       type: DataTypes.INTEGER(11),
@@ -69,6 +69,21 @@ module.exports = function (sequelize, DataTypes) {
       comment: "null"
     },
     'date_updated': {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: "null"
+    },
+    'access_token': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
+    'refresh_token': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
+    'token_expiry_date': {
       type: DataTypes.DATE,
       allowNull: true,
       comment: "null"

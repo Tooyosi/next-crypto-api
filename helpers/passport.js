@@ -2,7 +2,7 @@
 const passport = require('passport');
 const Strategy = require('passport-local');
 const models = require('../connection/sequelize')
-const md5 = require('md5')
+const {bin2hashData} = require('./index')
 
 passport.use(new Strategy({
     // set the fields to be used for validation
@@ -11,56 +11,34 @@ passport.use(new Strategy({
 },
     async (username, password, done) => {
         let userDetails = await models.User.findOne({
-            attributes: ['email', 'phone', 'user_id'],
+            attributes: ['firstname', 'lastname', 'email', 'phone', 'isActivated', 'user_id'],
             where: {
                 email: username,
-                password: md5(password)
+                password: bin2hashData(password, process.env.PASSWORD_HASH)
             },
-            include: [{
-                model: models.UserTypes,
+            include: {
+                model: models.UserType,
                 as: 'user_type',
                 attributes: ['user_type']
 
-            }, {
-                model: models.Wallet,
-                as: 'wallet',
-                attributes: ['amount']
-
-            }],
+            },
         })
-        if (userDetails !== null && userDetails !== undefined) {
-            let userInformation
-            switch (userDetails.dataValues.user_type_id) {
-                case 1:
-                    userInformation = await models.Individual.findOne({
-                        attributes: ['firstname', 'lastname'],
-                        where: {
-                            user_id: userDetails.dataValues.user_id
-                        }
-                    })
-                    break;
-                case 2:
-                    userInformation = await models.Business.findOne({
-                        attributes: ['business_name', 'business_type', 'website'],
-                        where: {
-                            user_id: userDetails.dataValues.user_id
-                        }
-                    })
-                    break;
-                case 3:
-                case 4:
-                case 5:
-                    break;
-                default:
-                    break;
-            }
-            let {dataValues} = userDetails;
-            dataValues.userInformation = userInformation
-            delete(dataValues.password)
+        if (userDetails !== null && userDetails !== undefined && userDetails.dataValues.isActivated == true) {
+            let {dataValues} = userDetails
+            let userAccount = await models.Account.findOne({
+                attributes: ['balance'],
+                where:{
+                    user_id: userDetails.user_id
+                }
+            })
+            dataValues.balance = userAccount.dataValues
             delete(dataValues.user_type_id)
 
             done(null, dataValues)
-        } else {
+        }else if(userDetails.dataValues.isActivated == false) {
+            done(null, false, "User not activated, Kindly activate your account");
+        }
+        else {
             done(null, false, "Invalid Credentials");
         }
     }

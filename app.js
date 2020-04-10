@@ -9,7 +9,9 @@ require('dotenv').config()
 app.use(express.json());
 app.use(express.urlencoded({extended: true}))
 
+const userRoutes = require('./routes/user/index')
 
+app.use('/user', userRoutes)
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 

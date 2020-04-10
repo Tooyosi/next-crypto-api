@@ -16,7 +16,7 @@ module.exports = {
             return res.status(400)
                 .send(response)
         }
-        let newPhone = phone 
+        let newPhone = phone
         if (phone.length != 11 && phone.length != 13) {
             response = new BaseResponse(failureStatus, "Kindly Enter a valid phone number", failureCode, {})
             return res.status(400)
@@ -59,7 +59,7 @@ module.exports = {
                     referral_id: `${email}${newUser.dataValues.user_id}`,
                     account_id: newAccount.account_id
                 })
-            }else{
+            } else {
                 newMember = await Models.Admin.create({
                     user_id: newUser.dataValues.user_id,
                     referral_id: `${email}${newUser.dataValues.user_id}`,
@@ -67,7 +67,7 @@ module.exports = {
                 })
             }
 
-            mailService.dispatch(email, "Next Crypto", "Registeration Successful", '<p>Next Crypto Registration Successful. kindly visit <a href="http://' +req.headers.host + '/activate/' +newMember.dataValues.referral_id +'">this Link</a> to activate your account<p>', (err) => {
+            mailService.dispatch(email, "Next Crypto", "Registeration Successful", '<p>Next Crypto Registration Successful. kindly visit <a href="http://' + req.headers.host + '/user/' + newUser.dataValues.user_id + '/activate">this Link</a> to activate your account<p>', (err) => {
                 if (err) {
                     logger.error(err)
                 }
@@ -81,5 +81,40 @@ module.exports = {
                 .send(response)
         }
 
+    }),
+
+    activate: ('/', async (req, res) => {
+        let { id } = req.params
+        let response
+        try {
+            let foundUser = await Models.User.findOne({
+                where: {
+                    user_id: id
+                }
+            })
+            if (foundUser == null || foundUser == undefined) {
+                response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+                return res.status(404)
+                    .send(response)
+            } else if (foundUser.dataValues.isActivated == true) {
+                response = new BaseResponse(failureStatus, "User already activated", failureCode, {})
+                return res.status(400)
+                    .send(response)
+
+            } else {
+                await foundUser.update({
+                    isActivated: true
+                })
+                response = new BaseResponse(successStatus, successStatus, successCode, {})
+                return res.status(200)
+                    .send(response)
+            }
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)
+
+        }
     })
 }

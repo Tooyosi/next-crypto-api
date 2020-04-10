@@ -35,7 +35,7 @@ passport.use(new Strategy({
             delete(dataValues.user_type_id)
 
             done(null, dataValues)
-        }else if(userDetails.dataValues.isActivated == false) {
+        }else if(userDetails && userDetails.dataValues.isActivated == false) {
             done(null, false, "User not activated, Kindly activate your account");
         }
         else {

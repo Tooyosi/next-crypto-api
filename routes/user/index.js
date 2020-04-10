@@ -58,4 +58,29 @@ const userController = require('../../controllers/user/index')
 */
 router.post('/', userController.signup)
 
+/**
+* @swagger
+* /user/{id}/activate:
+*   get:
+*     summary:  User activation Route .
+*     tags: [User]
+
+*     description: This Route activates an already created user.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/:id/activate', userController.activate)
 module.exports = router

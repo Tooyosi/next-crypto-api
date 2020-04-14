@@ -68,4 +68,48 @@ module.exports = {
         })(req, res, next);
     },
 
+    refreshToken: ('/', async (req, res) => {
+        let { refreshToken, token } = req.body
+        let response
+        if (refreshToken.trim() == "" || token.trim() == "") {
+            response = new BaseResponse(false, "One or more parameters are missing", failureCode, {})
+            return res.status(400).json(response)
+        }
+        try {
+            let sessionUser = await Models.User.findOne({
+                where: {
+                    user_id: req.user.id
+                }
+            })
+            let { dataValues } = sessionUser
+            if (dataValues.refresh_token == refreshToken) {
+                req.token = jwt.sign({
+                    id: dataValues.user_id,
+                }, process.env.SESSION_SECRET, {
+                });
+                let refreshToken = dataValues.user_id.toString() + '.' + crypto.randomBytes(40).toString('hex');
+
+                let currentDate = new Date(dateTime)
+
+                let expiryDate = addMinutes(currentDate, 30)
+
+                await sessionUser.update({
+                    access_token: req.token,
+                    refresh_token: refreshToken,
+                    token_expiry_date: expiryDate
+                })
+                response = new BaseResponse(true, "Success", successCode, { accessToken: req.token, refreshToken: refreshToken, tokenExpiry: expiryDate })
+                return res.status(200).send(response)
+            } else {
+                response = new BaseResponse(true, "Invalid refresh token", failureCode, {})
+                return res.status(400).send(response)
+
+            }
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(false, error.toString(), failureCode, {})
+            return res.status(400).json(response)
+
+        }
+    })
 }

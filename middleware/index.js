@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken')
 module.exports = {
     protected: async (err, req, res, next) => {
         if (err.name === 'UnauthorizedError') {
-            let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
+            let response = new BaseResponse(false, err.message? err.message.toString() : 'Invalid Token', failureCode, {})
             res.status(401).send(response);
         } else {
 

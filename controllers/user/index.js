@@ -1,16 +1,19 @@
 const express = require("express");
+const uuid = require('uuid').v4
 const router = express.Router({ mergeParams: true })
 const Models = require('../../connection/sequelize')
 const BaseResponse = require('../../helpers/ResponseClass')
 const { dateTime, successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData } = require('../../helpers/index')
 const { logger } = require('../../loggers/logger')
 const SendMail = require('../../helpers/SendMail')
+let getAncestors = require('../../helpers/getAncestors')
+let getIncompleteDownlines = require('../../helpers/getIncompleteDownline')
 let mailService = new SendMail("Gmail");
 module.exports = {
     signup: ('/', async (req, res) => {
         let { firstname, lastname, email, country, uplineReferralCode, phone, password, isAdmin } = req.body
         var ts = String(new Date().getTime())
-        let response
+        let response, memberUplineId
         if (firstname.trim() == "" || lastname.trim() == "" || !validator(email) || country.trim() == "" || password.trim() == "") {
             response = new BaseResponse(failureStatus, validationErrorMessage, failureCode, {})
             return res.status(400)
@@ -31,6 +34,20 @@ module.exports = {
                         referral_id: uplineReferralCode
                     }
                 })
+                
+            }
+            if (uplineMember !== null && uplineMember !== undefined) {
+                memberUplineId = {member_id: uplineMember.dataValues.member_id, user_id:uplineMember.dataValues.user_id}
+                let allDownlines = await Models.Members.findAll({
+                    where: {
+                        parentMember_id: uplineMember.dataValues.member_id
+                    }
+                })
+
+                if (allDownlines.length >= 5) {
+                    let incompleteDownlines = await getIncompleteDownlines(uplineMember.dataValues.user_id)
+                    memberUplineId = incompleteDownlines[0]
+                }
             }
             let newUser = await Models.User.create({
                 firstname: firstname,
@@ -53,12 +70,16 @@ module.exports = {
             if (!isAdmin) {
                 newMember = await Models.Members.create({
                     user_id: newUser.dataValues.user_id,
-                    upline_user_id: uplineMember !== null && uplineMember !== undefined ? uplineMember.dataValues.user_id : null,
-                    parentId: uplineMember !== null && uplineMember !== undefined ? uplineMember.dataValues.user_id : null,
+                    upline_user_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.user_id : null,
+                    parentId: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
                     current_stage: 1,
-                    referral_id: `${email}${newUser.dataValues.user_id}`,
-                    account_id: newAccount.account_id
+                    referral_id: uuid(),
+                    account_id: newAccount.account_id,
+                    parentMember_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
                 })
+
+                await getAncestors(newUser.dataValues.user_id)
+                console.log("here")
             } else {
                 newMember = await Models.Admin.create({
                     user_id: newUser.dataValues.user_id,

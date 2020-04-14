@@ -17,20 +17,17 @@ module.exports = {
 
                 let resp = info ? info : err.toString()
                 response = new BaseResponse(failureStatus, resp, failureCode, {})
-                logger.error(resp)
-                return res.status(401).send(response)
+                return res.status(403).send(response)
             } else if (info) {
                 let resp = info;
                 response = new BaseResponse(failureStatus, resp, failureCode, {})
-                logger.error(resp)
-                return res.status(401).send(response)
+                return res.status(403).send(response)
             }
             req.logIn(user, async function (err) {
                 if (err) {
                     let resp = err.toString()
                     response = new BaseResponse(false, resp, failureCode, {})
-                    logger.error(resp)
-                    return res.status(401).send(response)
+                    return res.status(403).send(response)
                 }
                 // if(req.user.us)
                 req.token = jwt.sign({

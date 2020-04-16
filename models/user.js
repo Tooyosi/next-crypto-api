@@ -87,6 +87,11 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true,
       comment: "null"
+    },
+    'payment_reference': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
     }
   }, {
     tableName: 'user'

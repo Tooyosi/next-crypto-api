@@ -1,8 +1,8 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('account', {
-    'account_id': {
+  return sequelize.define('notifications', {
+    'notification_id': {
       type: DataTypes.INTEGER(11),
       allowNull: false,
       primaryKey: true,
@@ -17,20 +17,19 @@ module.exports = function(sequelize, DataTypes) {
       references: {
         model: 'user',
         key: 'user_id'
-      },
-      unique: true
+      }
     },
-    'balance': {
+    'message': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'date_updated': {
+    'date': {
       type: DataTypes.DATE,
       allowNull: false,
       comment: "null"
     }
   }, {
-    tableName: 'account'
+    tableName: 'notifications'
   });
 };

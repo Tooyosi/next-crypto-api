@@ -52,7 +52,7 @@ router.post('/login', authController.postLogin)
 *   post:
 *     summary: User refresh token Route .
 *     tags: [Auth]
-*     description: This Route signs up a user.
+*     description: This Route returns a new user access token.
 *     consumes:
 *       — application/json
 *     parameters:
@@ -60,6 +60,7 @@ router.post('/login', authController.postLogin)
 *         in: header
 *         description: Bearer token
 *         type: string
+*         required: true
 *       - in: body
 *         name: body   
 *         required: true

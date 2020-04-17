@@ -163,7 +163,7 @@ module.exports = {
                                     to: memberDetails.bitcoin_wallet,
                                     amount: buyPrice,
                                     currency: 'BTC'
-                                }, function (err, tx) {
+                                }, async function (err, tx) {
                                     if (err) {
                                         logger.error(err.toString())
                                         response = new BaseResponse(failureStatus, err.toString(), failureCode, {})

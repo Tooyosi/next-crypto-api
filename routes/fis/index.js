@@ -27,5 +27,5 @@ const fisController = require('../../controllers/fis/index')
 */
 router.get('/', fisController.loadFis)
 
-
+router.post('/btc', fisController.btcConvert)
 module.exports = router

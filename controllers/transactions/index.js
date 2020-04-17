@@ -170,6 +170,9 @@ module.exports = {
                                         return res.status(400)
                                             .send(response)
                                     } else {
+                                        await transaction.update({
+                                            transaction_status: "successful"
+                                        })
                                         response = new BaseResponse(successStatus, successStatus, successCode, "Successful")
                                         return res.status(200)
                                             .send(response)
@@ -184,7 +187,11 @@ module.exports = {
                     return res.status(400)
                         .send(response)
                 }
-            } else {
+            } else if(action == "decline"){
+                await transaction.update({
+                    transaction_status: "declined",
+                })
+            }else {
                 response = new BaseResponse(failureStatus, "Invalid Action", failureCode, {})
                 return res.status(400)
                     .send(response)

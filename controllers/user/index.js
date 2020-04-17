@@ -185,7 +185,7 @@ module.exports = {
         let response;
         let transObj = {
             amount: Number(amount),
-            transaction_status: status !== "" ? status : "Pending",
+            transaction_status: status !== "" ? status : "pending",
             date: dateTime,
             user_id: id,
             transaction_reference: newReference

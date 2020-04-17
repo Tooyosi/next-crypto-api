@@ -29,10 +29,10 @@ models.Notifications.belongsTo(models.User, {
     as: "notifications"
 })
 
-models.Transactions.belongsTo(models.User, {
+models.Transactions.belongsTo(models.Members, {
     onDelete: 'CASCADE',
     foreignKey: 'user_id',
-    as: "transactions"
+    as: "member"
 })
 
 models.Transfers.belongsTo(models.User, {

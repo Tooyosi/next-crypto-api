@@ -17,10 +17,22 @@ client.getCurrentUser(function (err, accounts) {
     // console.log(accounts)
 });
 
-client.getPaymentMethods(null, function(err, pm) {
+client.getBuyPrice({'currencyPair': 'BTC-USD'}, (err, info) => {
+    console.log(`Buy Price: ${info.data.amount}`);
+    // console.log(info);
+    let amt = 1/info.data.amount
+    // console.log(amt.toPrecision(3))
+    let processingFee = 0.000001
+    let withdrawAmt = amt - processingFee
+    console.log(amt, withdrawAmt)
+});
+
+client.getPaymentMethods(null, async function(err, pm) {
     // console.log(err)
     // console.log(pm);
   });
+
+  
 client.getAccount("primary", function (err, accounts) {
     // accounts.forEach(function(acct) {
     console.log('my bal: ' + accounts.balance.amount + ' for ' + accounts.name);
@@ -78,8 +90,12 @@ app.use(function (req, res, next) {
 });
 const userRoutes = require('./routes/user/index')
 const authRoutes = require('./routes/auth/index')
+const transactionsRoutes = require('./routes/transactions/index')
+const fisRoutes = require('./routes/fis/index')
 app.use('/user', userRoutes)
 app.use('/auth', authRoutes)
+app.use('/transactions', transactionsRoutes)
+app.use('/fis', fisRoutes)
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
@@ -107,7 +123,7 @@ app.get("/testpaystack", async(req, res)=>{
         "currency": "NGN",
     })
     console.log(transferReciept.response.data.recipient_code)
-    let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, {source: "balance", reason: "Calm down", amount:3800, recipient: `${transferReciept.response.data.recipient_code}`})
+    let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, {source: "balance", reason: "Calm down", amount:800, recipient: `${transferReciept.response.data.recipient_code}`})
     res.send({result, transferReciept, transfer}) 
 })
 

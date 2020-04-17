@@ -58,6 +58,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true,
       comment: "null"
     },
+    'bank_code': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
     'referral_id': {
       type: DataTypes.STRING(255),
       allowNull: false,

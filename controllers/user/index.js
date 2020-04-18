@@ -253,9 +253,9 @@ module.exports = {
         }
     }),
 
-    getTransactions: ('/', async(req, res)=>{
-        let {id} = req.params
-        let { amount, reference, status, offset, date } = req.query
+    getTransactions: ('/', async (req, res) => {
+        let { id } = req.params
+        let { amount, reference, status, offset, date, type } = req.query
         let whereObj = {
             user_id: id
         }
@@ -271,6 +271,10 @@ module.exports = {
         if (date && date !== "") {
             whereObj.date = date
         }
+        if (type && type !== "") {
+            whereObj.transaction_type = type
+        }
+
         try {
             let allTransactions = await Models.Transactions.findAndCountAll({
                 where: whereObj,
@@ -302,7 +306,7 @@ module.exports = {
         let { id } = req.params
         let { recepientId, amount } = req.body
         let response;
-        if(amount < 0){
+        if (amount < 0) {
             console.log(req.user.id, id)
             response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
             return res.status(400)
@@ -314,13 +318,13 @@ module.exports = {
                     user_id: id
                 }
             })
-            
+
             if (sender == null || sender == undefined) {
                 response = new BaseResponse(failureStatus, "Invalid User", failureCode, {})
                 return res.status(400)
                     .send(response)
             }
-            if(Number(sender.balance) < Number(amount)){
+            if (Number(sender.balance) < Number(amount)) {
                 response = new BaseResponse(failureStatus, "Insufficient Funds", failureCode, {})
                 return res.status(400)
                     .send(response)
@@ -348,7 +352,7 @@ module.exports = {
             })
             response = new BaseResponse(successStatus, successStatus, successCode, "Transfer Successful")
             return res.status(200)
-                .send(response)            
+                .send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
@@ -357,30 +361,30 @@ module.exports = {
         }
     }),
 
-    editUser:('/', async(req, res)=>{
-        let {id} = req.params
+    editUser: ('/', async (req, res) => {
+        let { id } = req.params
         let response
-        let {firstname, lastname, phone} = req.body
+        let { firstname, lastname, phone } = req.body
         let updateObj = {
             date_updated: dateTime
         }
-        if(firstname.trim() == "" && lastname.trim() == "" && phone.trim() == ""){
+        if (firstname.trim() == "" && lastname.trim() == "" && phone.trim() == "") {
             response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
             return res.status(400)
                 .send(response)
         }
-        if(phone && phone.length !== 11){
+        if (phone && phone.length !== 11) {
             response = new BaseResponse(failureStatus, "Invalid phone number", failureCode, {})
             return res.status(400)
                 .send(response)
         }
-        if(firstname && firstname.trim() !== ""){
+        if (firstname && firstname.trim() !== "") {
             updateObj.firstname = firstname
         }
-        if(lastname && lastname.trim() !== ""){
+        if (lastname && lastname.trim() !== "") {
             updateObj.lastname = lastname
-        } 
-        if(phone && phone.length == 11){
+        }
+        if (phone && phone.length == 11) {
             updateObj.phone = phone
         }
         try {
@@ -390,42 +394,42 @@ module.exports = {
                 },
                 attributes: ["firstname", "lastname", "phone", "user_id"]
             })
-            
-        if(user == null || user == undefined){
-            response = new BaseResponse(failureStatus, "User not found", failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
 
-        await user.update(updateObj)
-        response = new BaseResponse(successStatus, successStatus, successCode, user)
-        return res.status(200)
-            .send(response)        
+            if (user == null || user == undefined) {
+                response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+
+            await user.update(updateObj)
+            response = new BaseResponse(successStatus, successStatus, successCode, user)
+            return res.status(200)
+                .send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)            
+                .send(response)
         }
     }),
 
-    editAccount:('/', async(req, res)=>{
-        let {id} = req.params
-        let {accountName, accountNumber, bankName, bankCode, bitcoinWallet} = req.body;
+    editAccount: ('/', async (req, res) => {
+        let { id } = req.params
+        let { accountName, accountNumber, bankName, bankCode, bitcoinWallet } = req.body;
         let response
-        if(accountName.trim() == "" || accountNumber.trim() == "" || accountNumber.length != 10 || bankName.trim() == "" || bankCode.trim() == "" || bitcoinWallet.trim() == ""){
+        if (accountName.trim() == "" || accountNumber.trim() == "" || accountNumber.length != 10 || bankName.trim() == "" || bankCode.trim() == "" || bitcoinWallet.trim() == "") {
             response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
             return res.status(400)
                 .send(response)
         }
         try {
             let user = await Models.Members.findOne({
-                where:{
+                where: {
                     user_id: id
                 }
             })
 
-            if(user == null || user == undefined){
+            if (user == null || user == undefined) {
                 response = new BaseResponse(failureStatus, "User not found", failureCode, {})
                 return res.status(400)
                     .send(response)
@@ -439,12 +443,82 @@ module.exports = {
             })
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200)
-                .send(response) 
+                .send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)             
+                .send(response)
+        }
+    }),
+    getTransactionPin: ('/', async (req, res) => {
+        var ts = String(new Date().getTime())
+        let response;
+        let { id } = req.params
+        try {
+            let user = await Models.User.findOne({
+                where: {
+                    user_id: id
+                }
+            })
+            if (user == null || user == undefined) {
+                logger.error(error.toString())
+                response = new BaseResponse(failureStatus, "User Not Found", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+            await user.update({
+                transaction_pin: bin2hashData(ts, process.env.PASSWORD_HASH)
+            })
+            mailService.dispatch(user.email, "Next Crypto", "Transaction Pin", `Your transaction pin is ${ts}. Kindly keep safe as you can not perform any transaction without it`, (err) => {
+                if (err) {
+                    logger.error(err.toString())
+                    response = new BaseResponse(successStatus, `An Error occured while sending mail .Your transaction pin is ${ts}. Kindly keep safe as you can not perform any transaction without it`, successCode, {})
+                    return res.status(200)
+                        .send(response)
+                } else {
+                    response = new BaseResponse(successStatus, `Transaction Pin has been sent to your email`, successCode, {})
+                    return res.status(200)
+                        .send(response)
+                }
+            })
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+    }),
+    verifyTransactionPin: ('/', async (req, res) => {
+        let response;
+        let { id } = req.params
+        let {pin} = req.body
+        try {
+            let user = await Models.User.findOne({
+                where: {
+                    user_id: id
+                }
+            })
+            if (user == null || user == undefined) {
+                logger.error(error.toString())
+                response = new BaseResponse(failureStatus, "User Not Found", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+            if(user.transaction_pin == bin2hashData(String(pin), process.env.PASSWORD_HASH)){
+                response = new BaseResponse(successStatus, successStatus, successCode, {})
+                return res.status(200)
+                    .send(response)
+            }else{
+                response = new BaseResponse(failureStatus, failureStatus, failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)
         }
     })
 }

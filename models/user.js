@@ -39,6 +39,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       comment: "null"
     },
+    'transaction_pin': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
     'last_login_date': {
       type: DataTypes.DATE,
       allowNull: true,

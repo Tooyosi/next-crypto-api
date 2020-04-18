@@ -360,6 +360,10 @@ router.post('/:id/transfer',authenticate,protected, refresh, isLoggedUser, userC
 *         name: status  
 *         schema:
 *           type: string
+*       - in: query
+*         name: type  
+*         schema:
+*           type: string
 *     responses: 
 *       200:
 *         description: Receive back flavor and flavor Id.
@@ -368,5 +372,79 @@ router.post('/:id/transfer',authenticate,protected, refresh, isLoggedUser, userC
 */
 
 router.get('/:id/transactions',authenticate,protected, refresh, isLoggedUser, userController.getTransactions)
+
+/**
+* @swagger
+* /user/{id}/transactions/pin:
+*   get:
+*     summary:  Generates user transaction pin .
+*     tags: [User]
+
+*     description: This Route generates a pin for user transactions on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+
+router.get('/:id/transactions/pin',authenticate,protected, refresh, isLoggedUser, userController.getTransactionPin)
+
+/**
+* @swagger
+* /user/{id}/transactions/pin:
+*   post:
+*     summary:  Verifys user transaction pin .
+*     tags: [User]
+
+*     description: This Route verifys pin for user transactions on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: body
+*         name: body   
+*         required: true
+*         schema:
+*            type: object
+*            required:
+*              -pin
+*            properties:
+*              pin:
+*                type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+
+router.post('/:id/transactions/pin',authenticate,protected, refresh, isLoggedUser, userController.verifyTransactionPin)
 
 module.exports = router

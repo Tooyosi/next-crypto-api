@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router({mergeParams: true})
 const userController = require('../../controllers/user/index')
-const {protected, refresh} = require('../../middleware/index')
+const {protected, refresh, isLoggedUser} = require('../../middleware/index')
 const expressJwt = require('express-jwt');  
 const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 /**
@@ -59,6 +59,111 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *         description: Bad Request.
 */
 router.post('/', userController.signup)
+
+/**
+* @swagger
+* /user/{id}:
+*   put:
+*     summary:  User Edit Route .
+*     tags: [User]
+
+*     description: This Route edits a user on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id  
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: body
+*         name: body   
+*         required: true
+*         schema:
+*            type: object
+*            required:
+*              -firstname
+*              -lastname
+*              -phone
+*            properties:
+*              firstname:
+*                type: string
+*              lastname:
+*                type: string
+*              phone:
+*                type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.put('/:id',authenticate, protected, refresh ,isLoggedUser,userController.editUser)
+
+/**
+* @swagger
+* /user/{id}/account:
+*   put:
+*     summary:  User Edit account Route .
+*     tags: [User]
+
+*     description: This Route edits a users account details on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id  
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: body
+*         name: body   
+*         required: true
+*         schema:
+*            type: object
+*            required:
+*              -accountName
+*              -accountNumber
+*              -bankName
+*              -bankCode
+*              -bitcoinWallet
+*            properties:
+*              accountName:
+*                type: string
+*                required: true
+*              accountNumber:
+*                type: string
+*                required: true
+*              bankName:
+*                type: string
+*                required: true
+*              bankCode:
+*                type: string
+*                required: true
+*              bitcoinWallet:
+*                type: string
+*                required: true
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.put('/:id/account',authenticate, protected, refresh ,isLoggedUser,userController.editAccount)
 
 /**
 * @swagger
@@ -164,7 +269,7 @@ router.get('/:email', userController.validateMail)
 *       400:
 *         description: Bad Request.
 */
-router.post('/:id/transactions',authenticate,protected, refresh, userController.postTransactions)
+router.post('/:id/transactions',authenticate,protected, refresh, isLoggedUser, userController.postTransactions)
 
 
 /**
@@ -209,5 +314,59 @@ router.post('/:id/transactions',authenticate,protected, refresh, userController.
 *       400:
 *         description: Bad Request.
 */
-router.post('/:id/transfer',authenticate,protected, refresh, userController.transfer)
+router.post('/:id/transfer',authenticate,protected, refresh, isLoggedUser, userController.transfer)
+
+
+/**
+* @swagger
+* /user/{id}/transactions:
+*   get:
+*     summary:  Fetch all user transactions .
+*     tags: [User]
+
+*     description: This Route fetches all transactions for a user on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: query
+*         name: reference   
+*         schema:
+*           type: string
+*       - in: query
+*         name: offset   
+*         schema:
+*           type: string
+*       - in: query
+*         name: amount  
+*         schema:
+*           type: string
+*       - in: query
+*         name: date  
+*         schema:
+*           type: string
+*       - in: query
+*         name: status  
+*         schema:
+*           type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+
+router.get('/:id/transactions',authenticate,protected, refresh, isLoggedUser, userController.getTransactions)
+
 module.exports = router

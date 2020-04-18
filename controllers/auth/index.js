@@ -29,10 +29,9 @@ module.exports = {
                     response = new BaseResponse(false, resp, failureCode, {})
                     return res.status(403).send(response)
                 }
-                // if(req.user.us)
                 req.token = jwt.sign({
                     id: req.user.user_id,
-                    isAdmin: req.user.user_type.dataValues.user_type == "Admin" ? true : false
+                    isAdmin: req.user.user_type.dataValues.user_type == "admin" ? true : false
                 }, process.env.SESSION_SECRET, {
                     // expiresIn: 60*2
                 });

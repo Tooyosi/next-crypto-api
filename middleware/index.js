@@ -2,7 +2,7 @@ const expressJwt = require('express-jwt');
 const authenticate = expressJwt({ secret: process.env.SESSION_SECRET });
 const BaseResponse = require('../helpers/ResponseClass')
 const { logger } = require('../loggers/logger')
-const { failureCode, addMinutes, convertDate, dateTime } = require('../helpers/index')
+const { failureCode, failureStatus, addMinutes, convertDate, dateTime } = require('../helpers/index')
 const models = require('../connection/sequelize')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
@@ -52,5 +52,15 @@ module.exports = {
             return res.status(400).json(response)
 
         }
+    },
+
+    isLoggedUser: async(req, res, next)=>{
+        let {id} = req.params
+        if(req.user.id != id){
+            response = new BaseResponse(failureStatus, "Invalid User", failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+        next()
     }
 }

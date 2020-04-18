@@ -253,16 +253,55 @@ module.exports = {
         }
     }),
 
+    getTransactions: ('/', async(req, res)=>{
+        let {id} = req.params
+        let { amount, reference, status, offset, date } = req.query
+        let whereObj = {
+            user_id: id
+        }
+        if (amount && amount !== "") {
+            whereObj.amount = amount
+        }
+        if (reference && reference !== "") {
+            whereObj.transaction_reference = reference
+        }
+        if (status && status !== "") {
+            whereObj.transaction_status = status
+        }
+        if (date && date !== "") {
+            whereObj.date = date
+        }
+        try {
+            let allTransactions = await Models.Transactions.findAndCountAll({
+                where: whereObj,
+                offset: offset ? Number(offset) : offset,
+                limit: 10,
+                order: [['transaction_id', 'DESC']],
+                include: {
+                    model: Models.Members,
+                    as: "member",
+                    attributes: ["account_name", "account_number", "bitcoin_wallet", "bank_name"],
+                    include: {
+                        model: Models.User,
+                        as: "details",
+                        attributes: ["user_id", "firstname", "lastname", "email"],
+                    }
+                }
+            })
+            response = new BaseResponse(successStatus, successStatus, successCode, allTransactions)
+            return res.status(200).send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+    }),
+
     transfer: ('/', async (req, res) => {
         let { id } = req.params
         let { recepientId, amount } = req.body
         let response;
-        if(req.user.id != id){
-            console.log(req.user.id, id)
-            response = new BaseResponse(failureStatus, "Invalid User", failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
         if(amount < 0){
             console.log(req.user.id, id)
             response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
@@ -315,6 +354,97 @@ module.exports = {
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
                 .send(response)
+        }
+    }),
+
+    editUser:('/', async(req, res)=>{
+        let {id} = req.params
+        let response
+        let {firstname, lastname, phone} = req.body
+        let updateObj = {
+            date_updated: dateTime
+        }
+        if(firstname.trim() == "" && lastname.trim() == "" && phone.trim() == ""){
+            response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+        if(phone && phone.length !== 11){
+            response = new BaseResponse(failureStatus, "Invalid phone number", failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+        if(firstname && firstname.trim() !== ""){
+            updateObj.firstname = firstname
+        }
+        if(lastname && lastname.trim() !== ""){
+            updateObj.lastname = lastname
+        } 
+        if(phone && phone.length == 11){
+            updateObj.phone = phone
+        }
+        try {
+            let user = await Models.User.findOne({
+                where: {
+                    user_id: id
+                },
+                attributes: ["firstname", "lastname", "phone", "user_id"]
+            })
+            
+        if(user == null || user == undefined){
+            response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+
+        await user.update(updateObj)
+        response = new BaseResponse(successStatus, successStatus, successCode, user)
+        return res.status(200)
+            .send(response)        
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)            
+        }
+    }),
+
+    editAccount:('/', async(req, res)=>{
+        let {id} = req.params
+        let {accountName, accountNumber, bankName, bankCode, bitcoinWallet} = req.body;
+        let response
+        if(accountName.trim() == "" || accountNumber.trim() == "" || accountNumber.length != 10 || bankName.trim() == "" || bankCode.trim() == "" || bitcoinWallet.trim() == ""){
+            response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+        try {
+            let user = await Models.Members.findOne({
+                where:{
+                    user_id: id
+                }
+            })
+
+            if(user == null || user == undefined){
+                response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+            await user.update({
+                account_name: accountName,
+                account_number: accountNumber,
+                bitcoin_wallet: bitcoinWallet,
+                bank_name: bankName,
+                bank_code: bankCode
+            })
+            response = new BaseResponse(successStatus, successStatus, successCode, {})
+            return res.status(200)
+                .send(response) 
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)             
         }
     })
 }

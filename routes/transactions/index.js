@@ -15,7 +15,7 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 /**
 * @swagger
 * /transactions:
-*   post:
+*   get:
 *     summary:  Fetch all transactions .
 *     tags: [Transactions]
 
@@ -54,7 +54,7 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *       400:
 *         description: Bad Request.
 */
-router.post('/',authenticate, protected, refresh,isAdmin, transactionsController.getAll)
+router.get('/',authenticate, protected, refresh,isAdmin, transactionsController.getAll)
 
 
 /**

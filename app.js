@@ -76,7 +76,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(passport.initialize())
 app.use(passport.session())
 app.use(function (req, res, next) {
-    var allowedOrigins = ['http://localhost:8080', 'https://www.rightstepsfoundation.org', 'https://rightstepsfoundation.org', 'www.rightstepsfoundation.org'];
+    var allowedOrigins = ['http://localhost:8080', 'https://www.rightstepsfoundation.org', 'https://rightstepsfoundation.org', 'http://c5d13929.ngrok.io/'];
     var origin = req.headers.origin;
 
     if (allowedOrigins.includes(origin)) {

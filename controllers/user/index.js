@@ -222,16 +222,21 @@ module.exports = {
                     transObj.currency = "TAC"
                     break
             }
-
+            let userAccount = await Models.Account.findOne({
+                where: {
+                    user_id: id
+                }
+            })
+            if(type == 1 && Number(amount) > Number(userAccount.dataValues.balance)){
+                response = new BaseResponse(failureStatus, "Insufficient Funds", failureCode, {})
+                return res.status(400)
+                    .send(response)                
+            }
             let newTransaction = await Models.Transactions.create(transObj);
             if (type == 2 && reference.trim() !== "") {
 
                 // console.log("here")
-                let userAccount = await Models.Account.findOne({
-                    where: {
-                        user_id: id
-                    }
-                })
+               
 
                 let newAmt = Number(userAccount.dataValues.balance) + Number(amount)
                 let update = await updateAccount(userAccount, newAmt, dateTime)
@@ -510,7 +515,7 @@ module.exports = {
                 return res.status(200)
                     .send(response)
             }else{
-                response = new BaseResponse(failureStatus, failureStatus, failureCode, {})
+                response = new BaseResponse(failureStatus, "Invalid Transaction Pin", failureCode, {})
                 return res.status(400)
                     .send(response)
             }

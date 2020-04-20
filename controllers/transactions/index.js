@@ -98,6 +98,14 @@ module.exports = {
                         return res.status(400)
                             .send(response)
                     }
+                    let exChangeRate = await apicall.makeCall("GET", "https://free.currconv.com/api/v7/convert?q=NGN_USD&compact=ultra&apiKey=8b45b064c092a5a04138")
+                    let newAmt
+                    if(exChangeRate.status){
+                        newAmt = Number(transaction.amount) / exChangeRate.response.NGN_USD
+                    }else{
+                        newAmt = Number(transaction.amount) * 356
+
+                    }
                     let transferReciept = await apicall.makeCall("POST", `https://api.paystack.co/transferrecipient`, {
                         type: "nuban",
                         name: memberDetails.account_name,
@@ -107,8 +115,8 @@ module.exports = {
                         currency: "NGN",
                     })
 
-
-                    let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, { source: "balance", reason: `${withdrawer.email}'s cash withdrawal`, amount: (Number(transaction.amount) * 100), recipient: `${transferReciept.response.data.recipient_code}` })
+                    
+                    let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, { source: "balance", reason: `${withdrawer.email}'s cash withdrawal`, amount: (Number(newAmt) * 100), recipient: `${transferReciept.response.data.recipient_code}` })
                     if (transfer.status) {
                         await transaction.update({
                             transaction_status: transfer.response.data.status

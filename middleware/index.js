@@ -6,6 +6,7 @@ const { failureCode, failureStatus, addMinutes, convertDate, dateTime } = requir
 const models = require('../connection/sequelize')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
+const moment = require('moment-timezone')
 
 
 module.exports = {
@@ -36,14 +37,18 @@ module.exports = {
             })
             let { dataValues } = sessionUser
             let expirtDate = convertDate(dataValues.token_expiry_date)
-            let now = new Date(dateTime).getTime()
+            let nowDate = new Date()
+            let now = moment.tz("Africa/Lagos").unix()
             let dateExpired = new Date(expirtDate).getTime();
             let {authorization} = req.headers
             let incomingToken = authorization.replace('Bearer ', '')
-            if (now > dateExpired || incomingToken !== sessionUser.access_token) {
+            if (now > (dateExpired/1000)) {
                 let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
                 return res.status(401).send(response);
-            } else {
+            } else if(incomingToken !== sessionUser.access_token){
+                let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
+                return res.status(401).send(response);
+            }else {
                 next()
             }
         } catch (error) {

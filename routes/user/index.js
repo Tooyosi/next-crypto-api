@@ -35,6 +35,7 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *              -phone
 *              -password
 *              -isAdmin
+*              -paystackReference
 *            properties:
 *              firstname:
 *                type: string
@@ -49,6 +50,8 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *              uplineReferralCode:
 *                type: string
 *              phone:
+*                type: string
+*              paystackReference:
 *                type: string
 *              isAdmin:
 *                type: boolean 

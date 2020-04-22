@@ -36,13 +36,18 @@ module.exports = {
                 }
             })
             let { dataValues } = sessionUser
-            let expirtDate = convertDate(dataValues.token_expiry_date)
+            let expirtDate = moment.tz(dataValues.token_expiry_date, "Africa/Lagos").format().slice(0, 19).replace('T', ' ')
             let nowDate = new Date()
             let now = moment.tz("Africa/Lagos").unix()
-            let dateExpired = new Date(expirtDate).getTime();
+            let dateExpired = new Date(moment.tz(dataValues.token_expiry_date, "Africa/Lagos").format().slice(0, 19).replace('T', ' ')).getTime();
             let {authorization} = req.headers
             let incomingToken = authorization.replace('Bearer ', '')
-            if (now > (dateExpired/1000)) {
+            // console.log(incomingToken == sessionUser.access_token)
+            console.log(moment.tz("Africa/Lagos").unix() > (moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()))
+            console.log(moment.tz("Africa/Lagos").unix())
+            console.log(moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix())
+
+            if (moment.tz("Africa/Lagos").unix() > moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()) {
                 let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
                 return res.status(401).send(response);
             } else if(incomingToken !== sessionUser.access_token){

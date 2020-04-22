@@ -18,13 +18,13 @@ client.getCurrentUser(function (err, accounts) {
 });
 
 client.getBuyPrice({'currencyPair': 'BTC-USD'}, (err, info) => {
-    console.log(`Buy Price: ${info.data.amount}`);
-    // console.log(info);
-    let amt = 1/info.data.amount
-    // console.log(amt.toPrecision(3))
-    let processingFee = 0.000001
-    let withdrawAmt = amt - processingFee
-    console.log(amt, withdrawAmt)
+    // console.log(`Buy Price: ${info.data.amount}`);
+    // // console.log(info);
+    // let amt = 1/info.data.amount
+    // // console.log(amt.toPrecision(3))
+    // let processingFee = 0.000001
+    // let withdrawAmt = amt - processingFee
+    // console.log(amt, withdrawAmt)
 });
 
 client.getPaymentMethods(null, async function(err, pm) {
@@ -35,15 +35,15 @@ client.getPaymentMethods(null, async function(err, pm) {
   
 client.getAccount("primary", function (err, accounts) {
     // accounts.forEach(function(acct) {
-    console.log('my bal: ' + accounts.balance.amount + ' for ' + accounts.name);
-    var args = {
-        "amount": "12",
-        "currency": "BTC"
-      };
-      accounts.sell(args, function(err, xfer) {
-        //   console.log(err)
-        // console.log('my xfer id is: ' + xfer.id);
-      });
+    // console.log('my bal: ' + accounts.balance.amount + ' for ' + accounts.name);
+    // var args = {
+    //     "amount": "12",
+    //     "currency": "BTC"
+    //   };
+    //   accounts.sell(args, function(err, xfer) {
+    //     //   console.log(err)
+    //     // console.log('my xfer id is: ' + xfer.id);
+    //   });
     // });
     // console.log(err)
     // console.log(accounts)
@@ -54,21 +54,21 @@ client.getAccount("primary", function (err, accounts) {
     // }, function (err, tx) {
     //     console.log(tx);
     // });
-    accounts.createAddress(null,function(err, addr) {
-        // console.log(addr.address);
-        accounts.sendMoney({
-            'to': "3FAZbrJLMqzhaZvxiH81uyjDJserjSQtrF",
-            'amount': '0.01',
-            'currency': 'BTC'
-        }, function (err, tx) {
-            // console.log(err)
-            // console.log(tx);
-        });
-        // address = addr;
-      });
-    accounts.getAddresses(null, function (err, addresses) {
-        // console.log(addresses);
-    });
+    // accounts.createAddress(null,function(err, addr) {
+    //     // console.log(addr.address);
+    //     // accounts.sendMoney({
+    //     //     'to': "3FAZbrJLMqzhaZvxiH81uyjDJserjSQtrF",
+    //     //     'amount': '0.01',
+    //     //     'currency': 'BTC'
+    //     // }, function (err, tx) {
+    //     //     // console.log(err)
+    //     //     // console.log(tx);
+    //     // });
+    //     // address = addr;
+    //   });
+    // accounts.getAddresses(null, function (err, addresses) {
+    //     // console.log(addresses);
+    // });
 });
 
 app.use(express.json());
@@ -92,10 +92,13 @@ const userRoutes = require('./routes/user/index')
 const authRoutes = require('./routes/auth/index')
 const transactionsRoutes = require('./routes/transactions/index')
 const fisRoutes = require('./routes/fis/index')
+const membersRoutes = require('./routes/members/index')
 app.use('/user', userRoutes)
 app.use('/auth', authRoutes)
 app.use('/transactions', transactionsRoutes)
 app.use('/fis', fisRoutes)
+app.use('/members', membersRoutes)
+
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 

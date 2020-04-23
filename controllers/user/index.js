@@ -3,13 +3,16 @@ const uuid = require('uuid').v4
 const router = express.Router({ mergeParams: true })
 const Models = require('../../connection/sequelize')
 const BaseResponse = require('../../helpers/ResponseClass')
-const { dateTime, successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData } = require('../../helpers/index')
+const { dateTime, successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData, convertDate } = require('../../helpers/index')
 const { logger } = require('../../loggers/logger')
 const SendMail = require('../../helpers/SendMail')
 let getAncestors = require('../../helpers/getAncestors')
 let getIncompleteDownlines = require('../../helpers/getIncompleteDownline')
 let mailService = new SendMail("Gmail");
 const updateAccount = require('../../helpers/updateAccount')
+const Op = require('sequelize').Op
+let createNotifications = require('../../helpers/createNotification');
+const moment = require('moment-timezone');
 module.exports = {
     signup: ('/', async (req, res) => {
         let { firstname, lastname, email, country, uplineReferralCode, phone, password, isAdmin, paystackReference } = req.body
@@ -519,6 +522,216 @@ module.exports = {
                 return res.status(400)
                     .send(response)
             }
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+    }), 
+    getUsers: ('/', async(req, res)=>{
+        let { searchTerm } = req.params;
+        let { offset } = req.query
+        let response
+        try {
+            let users = await Models.User.findAndCountAll({
+                where: {
+                    [Op.or]: [{
+                        email: {
+                            [Op.like]: `%${searchTerm}%`
+                        },
+                    }, {
+                        firstname: {
+                            [Op.like]: `%${searchTerm}%`
+                        }
+                    },
+                    {
+                        lastname: {
+                            [Op.like]: `%${searchTerm}%`
+                        }
+                    }]
+                },
+                offset: Number(offset),
+                limit: 10
+
+            })
+            response = new BaseResponse(successStatus, successStatus, successCode, users)
+            return res.status(200)
+                .send(response)    
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)        }
+    }),
+    createInvestment: ('/', async(req, res)=>{
+        let {id} = req.params
+        let {amount, dueDate} = req.body
+        let date = convertDate(Date.now())
+        let response
+        if(Number(amount) < 1){
+            response = new BaseResponse(failureStatus,"Invalid Amount", failureCode, {})
+            return res.status(400).send(response)
+        }
+        try {
+            let userAccount = await Models.Account.findOne({
+                where: {
+                    user_id: id
+                }
+            })
+            if(Number(userAccount.balance) == 0 || Number(userAccount.balance) < Number(amount)){
+                response = new BaseResponse(failureStatus,"Insufficient Balance", failureCode, {})
+                return res.status(400).send(response)
+            }
+            let newInvestment = await Models.Investments.create({
+                user_id: id,
+                amount_invested: amount,
+                current_amount: amount,
+                total_profits: 0,
+                date_created: date,
+                due_date: convertDate(dueDate)
+            })
+            let newUserBalance = Number(userAccount.balance) - Number(amount);
+            await userAccount.update({
+                balance: newUserBalance
+            })
+            await createNotifications(id,`New Investment of ${amount} made` , date)
+            response = new BaseResponse(successStatus,successStatus, successCode, {})
+            return res.status(200).send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)             
+        }
+    }),
+    redeemInvestment: ('/', async (req, res)=>{
+        let date = convertDate(Date.now())
+        let {id, investmentId} = req.params
+        try {
+            let investment = await Models.Investments.findOne({
+                where: {
+                    investment_id: investmentId
+                }
+            })
+
+            if(investment == null || investment == undefined){
+                response = new BaseResponse(failureStatus, "Investment Not Found", failureCode, {})
+                return res.status(400)
+                    .send(response)  
+            }
+            if(String(investment.user_id) !== String(id)){
+                response = new BaseResponse(failureStatus, "Invalid User", failureCode, {})
+                return res.status(400)
+                    .send(response)  
+            }
+            if(moment.tz("Africa/Lagos").unix() < moment.tz(investment.due_date, "Africa/Lagos").unix()){
+                response = new BaseResponse(failureStatus, "Due Date Not Reached", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+            if(investment.isRedeemed == true){
+                response = new BaseResponse(failureStatus, "Investment Already Redeemed", failureCode, {})
+                return res.status(400)
+                    .send(response) 
+            }
+            let userAccount = await Models.Account.findOne({
+                where: {
+                    user_id: id
+                }
+            })
+
+            let newBalance = Number(investment.current_amount) + Number(userAccount.balance)
+            await userAccount.update({
+                balance: newBalance
+            })
+            await investment.update({
+                date_updated: date,
+                isRedeemed: true
+            })
+            await createNotifications(id,`Account Credit of ${investment.current_amount} from Redeemed investment` , date)
+            response = new BaseResponse(successStatus,successStatus, successCode, {})
+            return res.status(200).send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)                
+        }
+    }),
+
+    cancelInvestment:('/', async (req, res)=>{
+        let date = convertDate(Date.now())
+        let {id, investmentId} = req.params
+        try {
+            let investment = await Models.Investments.findOne({
+                where: {
+                    investment_id: investmentId
+                }
+            })
+
+            if(investment == null || investment == undefined){
+                response = new BaseResponse(failureStatus, "Investment Not Found", failureCode, {})
+                return res.status(400)
+                    .send(response)  
+            }
+            if(String(investment.user_id) !== String(id)){
+                response = new BaseResponse(failureStatus, "Invalid User", failureCode, {})
+                return res.status(400)
+                    .send(response)  
+            }
+            if(investment.isRedeemed == true){
+                response = new BaseResponse(failureStatus, "Investment Already Redeemed", failureCode, {})
+                return res.status(400)
+                    .send(response) 
+            }
+            let userAccount = await Models.Account.findOne({
+                where: {
+                    user_id: id
+                }
+            })
+
+            let newBalance = Number(investment.amount_invested) + Number(userAccount.balance)
+            await userAccount.update({
+                balance: newBalance
+            })
+            await investment.update({
+                date_updated: date,
+                isRedeemed: true
+            })
+            await createNotifications(id,`Account Credit of ${investment.amount_invested} from Canceled investment` , date)
+            response = new BaseResponse(successStatus,successStatus, successCode, {})
+            return res.status(200).send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)                
+        }
+    }),
+
+    getInvestments:('/', async (req, res)=>{
+        let { id } = req.params
+        let { amount, offset} = req.query
+        let response
+        let whereObj = {
+        }
+        if(!req.user.isAdmin){
+            whereObj.user_id = id
+        }
+        if (amount && amount !== "") {
+            whereObj.amount_invested = amount
+        }
+        
+        try {
+            let allInvestments = await Models.Investments.findAndCountAll({
+                where: whereObj,
+                offset: offset ? Number(offset) : offset,
+                limit: 10,
+                order: [['investment_id', 'DESC']],
+            })
+            response = new BaseResponse(successStatus, successStatus, successCode, allInvestments)
+            return res.status(200).send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})

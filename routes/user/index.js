@@ -222,6 +222,40 @@ router.get('/:id/activate', userController.activate)
 router.get('/:email', userController.validateMail)
 
 
+/**
+* @swagger
+* /user/search/{searchTerm}:
+*   post:
+*     summary:  User search Route .
+*     tags: [User]
+
+*     description: This Route searches for a user.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: searchTerm   
+*         required: true
+*         schema:
+*           type: string
+*           minimum: 1
+*           description: The search term
+*       - in: query
+*         name: offset   
+*         schema:
+*           type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.post('/search/:searchTerm',authenticate,protected, refresh,  userController.getUsers)
 
 /**
 * @swagger
@@ -449,5 +483,166 @@ router.get('/:id/transactions/pin',authenticate,protected, refresh, isLoggedUser
 */
 
 router.post('/:id/transactions/pin',authenticate,protected, refresh, isLoggedUser, userController.verifyTransactionPin)
+
+/**
+* @swagger
+* /user/{id}/investment:
+*   post:
+*     summary:  User investment Route .
+*     tags: [User]
+
+*     description: This Route creates investment for the user.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: body
+*         name: body   
+*         required: true
+*         schema:
+*            type: object
+*            required:
+*              -amount
+*              -dueDate
+*            properties:
+*              amount:
+*                type: integer
+*              dueDate:
+*                type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.post('/:id/investment',authenticate,protected, refresh, isLoggedUser, userController.createInvestment)
+
+/**
+* @swagger
+* /user/{id}/investment/{investmentId}/redeem:
+*   get:
+*     summary:  User investment Route .
+*     tags: [User]
+
+*     description: This Route redeems investment for the user.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: investmentId   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/:id/investment/:investmentId/redeem',authenticate,protected, refresh, isLoggedUser, userController.redeemInvestment)
+
+
+/**
+* @swagger
+* /user/{id}/investment/{investmentId}/cancel:
+*   get:
+*     summary:  User investment Route .
+*     tags: [User]
+
+*     description: This Route cancels investment for the user.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: investmentId   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/:id/investment/:investmentId/cancel',authenticate,protected, refresh, isLoggedUser, userController.cancelInvestment)
+
+/**
+* @swagger
+* /user/{id}/investment:
+*   get:
+*     summary:  Fetch all user investments .
+*     tags: [User]
+
+*     description: This Route fetches all investments for a user on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: query
+*         name: offset   
+*         schema:
+*           type: string
+*       - in: query
+*         name: amount  
+*         schema:
+*           type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+
+router.get('/:id/investment',authenticate,protected, refresh, isLoggedUser, userController.getInvestments)
 
 module.exports = router

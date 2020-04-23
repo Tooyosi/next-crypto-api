@@ -2,16 +2,18 @@ const express = require("express");
 const router = express.Router({ mergeParams: true })
 const Models = require('../../connection/sequelize')
 const BaseResponse = require('../../helpers/ResponseClass')
-const { dateTime, successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData, addMinutes } = require('../../helpers/index')
+const {  successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData, addMinutes } = require('../../helpers/index')
 const { logger } = require('../../loggers/logger')
 const SendMail = require('../../helpers/SendMail')
 const passport = require('../../helpers/passport')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
+const moment = require('moment-timezone')
 
 module.exports = {
     postLogin: function (req, res, next) {
-        let response
+        let response, dateTime
+        dateTime = moment.tz(Date.now(), "Africa/Lagos").format().slice(0, 19).replace('T', ' ')
         passport.authenticate('local', { session: false }, (err, user, info) => {
             if (err || !user) {
 
@@ -70,6 +72,7 @@ module.exports = {
     refreshToken: ('/', async (req, res) => {
         let { refreshToken, token } = req.body
         let response
+        let dateTime = moment.tz(Date.now(), "Africa/Lagos").format().slice(0, 19).replace('T', ' ')
         if (refreshToken.trim() == "" || token.trim() == "") {
             response = new BaseResponse(false, "One or more parameters are missing", failureCode, {})
             return res.status(400).json(response)

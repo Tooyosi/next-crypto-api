@@ -36,7 +36,7 @@ module.exports = {
                     attributes: ["account_name", "account_number", "bitcoin_wallet", "bank_name"],
                     include: {
                         model: Models.User,
-                        as: "details",
+                        as: "attributes",
                         attributes: ["user_id", "firstname", "lastname", "email"],
                     }
                 }

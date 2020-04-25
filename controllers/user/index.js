@@ -83,6 +83,7 @@ module.exports = {
                     parentId: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
                     current_stage: 1,
                     referral_id: uuid(),
+                    sponsor_id: uplineMember ? uplineMember.user_id : null,
                     account_id: newAccount.account_id,
                     parentMember_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
                 })
@@ -99,10 +100,12 @@ module.exports = {
 
             mailService.dispatch(email, "Next Crypto", "Registeration Successful", '<p>Next Crypto Registration Successful. kindly visit <a href="http://' + req.headers.host + '/user/' + newUser.dataValues.user_id + '/activate">this Link</a> to activate your account<p>', (err) => {
                 if (err) {
-                    logger.error(err)
-                }
-                response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, we have sent an activation link to your email ${email}. Please click the link to verify your email address and activate your Next crypto account`)
-                return res.status(200).send(response)
+                    // logger.error(err)
+                    response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, kindly visit http://${req.headers.host}/user/${newUser.dataValues.user_id}/activate to activate your account`)
+
+                } else {
+                    response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, we have sent an activation link to your email ${email}. Please click the link to verify your email address and activate your Next crypto account`)
+                } return res.status(200).send(response)
             })
         } catch (error) {
             logger.error(error.toString())
@@ -230,16 +233,16 @@ module.exports = {
                     user_id: id
                 }
             })
-            if(type == 1 && Number(amount) > Number(userAccount.dataValues.balance)){
+            if (type == 1 && Number(amount) > Number(userAccount.dataValues.balance)) {
                 response = new BaseResponse(failureStatus, "Insufficient Funds", failureCode, {})
                 return res.status(400)
-                    .send(response)                
+                    .send(response)
             }
             let newTransaction = await Models.Transactions.create(transObj);
             if (type == 2 && reference.trim() !== "") {
 
                 // console.log("here")
-               
+
 
                 let newAmt = Number(userAccount.dataValues.balance) + Number(amount)
                 let update = await updateAccount(userAccount, newAmt, dateTime)
@@ -295,7 +298,7 @@ module.exports = {
                     attributes: ["account_name", "account_number", "bitcoin_wallet", "bank_name"],
                     include: {
                         model: Models.User,
-                        as: "details",
+                        as: "attributes",
                         attributes: ["user_id", "firstname", "lastname", "email"],
                     }
                 }
@@ -500,7 +503,7 @@ module.exports = {
     verifyTransactionPin: ('/', async (req, res) => {
         let response;
         let { id } = req.params
-        let {pin} = req.body
+        let { pin } = req.body
         try {
             let user = await Models.User.findOne({
                 where: {
@@ -513,11 +516,11 @@ module.exports = {
                 return res.status(400)
                     .send(response)
             }
-            if(user.transaction_pin == bin2hashData(String(pin), process.env.PASSWORD_HASH)){
+            if (user.transaction_pin == bin2hashData(String(pin), process.env.PASSWORD_HASH)) {
                 response = new BaseResponse(successStatus, successStatus, successCode, {})
                 return res.status(200)
                     .send(response)
-            }else{
+            } else {
                 response = new BaseResponse(failureStatus, "Invalid Transaction Pin", failureCode, {})
                 return res.status(400)
                     .send(response)
@@ -528,8 +531,8 @@ module.exports = {
             return res.status(400)
                 .send(response)
         }
-    }), 
-    getUsers: ('/', async(req, res)=>{
+    }),
+    getUsers: ('/', async (req, res) => {
         let { searchTerm } = req.params;
         let { offset } = req.query
         let response
@@ -557,20 +560,21 @@ module.exports = {
             })
             response = new BaseResponse(successStatus, successStatus, successCode, users)
             return res.status(200)
-                .send(response)    
+                .send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)        }
+                .send(response)
+        }
     }),
-    createInvestment: ('/', async(req, res)=>{
-        let {id} = req.params
-        let {amount, dueDate} = req.body
+    createInvestment: ('/', async (req, res) => {
+        let { id } = req.params
+        let { amount, dueDate } = req.body
         let date = convertDate(Date.now())
         let response
-        if(Number(amount) < 1){
-            response = new BaseResponse(failureStatus,"Invalid Amount", failureCode, {})
+        if (Number(amount) < 1) {
+            response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
             return res.status(400).send(response)
         }
         try {
@@ -579,8 +583,8 @@ module.exports = {
                     user_id: id
                 }
             })
-            if(Number(userAccount.balance) == 0 || Number(userAccount.balance) < Number(amount)){
-                response = new BaseResponse(failureStatus,"Insufficient Balance", failureCode, {})
+            if (Number(userAccount.balance) == 0 || Number(userAccount.balance) < Number(amount)) {
+                response = new BaseResponse(failureStatus, "Insufficient Balance", failureCode, {})
                 return res.status(400).send(response)
             }
             let newInvestment = await Models.Investments.create({
@@ -595,19 +599,19 @@ module.exports = {
             await userAccount.update({
                 balance: newUserBalance
             })
-            await createNotifications(id,`New Investment of ${amount} made` , date)
-            response = new BaseResponse(successStatus,successStatus, successCode, {})
+            await createNotifications(id, `New Investment of ${amount} made`, date)
+            response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)             
+                .send(response)
         }
     }),
-    redeemInvestment: ('/', async (req, res)=>{
+    redeemInvestment: ('/', async (req, res) => {
         let date = convertDate(Date.now())
-        let {id, investmentId} = req.params
+        let { id, investmentId } = req.params
         try {
             let investment = await Models.Investments.findOne({
                 where: {
@@ -615,25 +619,25 @@ module.exports = {
                 }
             })
 
-            if(investment == null || investment == undefined){
+            if (investment == null || investment == undefined) {
                 response = new BaseResponse(failureStatus, "Investment Not Found", failureCode, {})
                 return res.status(400)
-                    .send(response)  
+                    .send(response)
             }
-            if(String(investment.user_id) !== String(id)){
+            if (String(investment.user_id) !== String(id)) {
                 response = new BaseResponse(failureStatus, "Invalid User", failureCode, {})
                 return res.status(400)
-                    .send(response)  
+                    .send(response)
             }
-            if(moment.tz("Africa/Lagos").unix() < moment.tz(investment.due_date, "Africa/Lagos").unix()){
+            if (moment.tz("Africa/Lagos").unix() < moment.tz(investment.due_date, "Africa/Lagos").unix()) {
                 response = new BaseResponse(failureStatus, "Due Date Not Reached", failureCode, {})
                 return res.status(400)
                     .send(response)
             }
-            if(investment.isRedeemed == true){
+            if (investment.isRedeemed == true) {
                 response = new BaseResponse(failureStatus, "Investment Already Redeemed", failureCode, {})
                 return res.status(400)
-                    .send(response) 
+                    .send(response)
             }
             let userAccount = await Models.Account.findOne({
                 where: {
@@ -649,20 +653,20 @@ module.exports = {
                 date_updated: date,
                 isRedeemed: true
             })
-            await createNotifications(id,`Account Credit of ${investment.current_amount} from Redeemed investment` , date)
-            response = new BaseResponse(successStatus,successStatus, successCode, {})
+            await createNotifications(id, `Account Credit of ${investment.current_amount} from Redeemed investment`, date)
+            response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)                
+                .send(response)
         }
     }),
 
-    cancelInvestment:('/', async (req, res)=>{
+    cancelInvestment: ('/', async (req, res) => {
         let date = convertDate(Date.now())
-        let {id, investmentId} = req.params
+        let { id, investmentId } = req.params
         try {
             let investment = await Models.Investments.findOne({
                 where: {
@@ -670,20 +674,20 @@ module.exports = {
                 }
             })
 
-            if(investment == null || investment == undefined){
+            if (investment == null || investment == undefined) {
                 response = new BaseResponse(failureStatus, "Investment Not Found", failureCode, {})
                 return res.status(400)
-                    .send(response)  
+                    .send(response)
             }
-            if(String(investment.user_id) !== String(id)){
+            if (String(investment.user_id) !== String(id)) {
                 response = new BaseResponse(failureStatus, "Invalid User", failureCode, {})
                 return res.status(400)
-                    .send(response)  
+                    .send(response)
             }
-            if(investment.isRedeemed == true){
+            if (investment.isRedeemed == true) {
                 response = new BaseResponse(failureStatus, "Investment Already Redeemed", failureCode, {})
                 return res.status(400)
-                    .send(response) 
+                    .send(response)
             }
             let userAccount = await Models.Account.findOne({
                 where: {
@@ -699,30 +703,30 @@ module.exports = {
                 date_updated: date,
                 isRedeemed: true
             })
-            await createNotifications(id,`Account Credit of ${investment.amount_invested} from Canceled investment` , date)
-            response = new BaseResponse(successStatus,successStatus, successCode, {})
+            await createNotifications(id, `Account Credit of ${investment.amount_invested} from Canceled investment`, date)
+            response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)                
+                .send(response)
         }
     }),
 
-    getInvestments:('/', async (req, res)=>{
+    getInvestments: ('/', async (req, res) => {
         let { id } = req.params
-        let { amount, offset} = req.query
+        let { amount, offset } = req.query
         let response
         let whereObj = {
         }
-        if(!req.user.isAdmin){
+        if (!req.user.isAdmin) {
             whereObj.user_id = id
         }
         if (amount && amount !== "") {
             whereObj.amount_invested = amount
         }
-        
+
         try {
             let allInvestments = await Models.Investments.findAndCountAll({
                 where: whereObj,

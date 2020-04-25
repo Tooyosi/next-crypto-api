@@ -56,7 +56,7 @@ models.User.belongsTo(models.UserType, {
 models.Members.belongsTo(models.User, {
         onDelete: 'CASCADE',
         foreignKey: 'user_id',
-        as: 'details'
+        as: 'attributes'
 });
 models.Admin.belongsTo(models.User, {
     onDelete: 'CASCADE',

@@ -14,7 +14,7 @@ let ancestors = async (id) => {
 
         }, {
             model: models.User,
-            as: 'details',
+            as: 'attributes',
             attributes: ['firstname', 'lastname', 'email']
 
         }],

@@ -12,12 +12,12 @@ const members = async (id) => {
             hierarchy: true,
             include: [{
                 model: models.User,
-                as: 'details',
+                as: 'attributes',
                 attributes: ['firstname', 'lastname', 'email']
             }]
         }, {
             model: models.User,
-            as: 'details',
+            as: 'attributes',
             attributes: ['firstname', 'lastname', 'email']
 
         }],

@@ -43,9 +43,9 @@ module.exports = {
             let {authorization} = req.headers
             let incomingToken = authorization.replace('Bearer ', '')
             // console.log(incomingToken == sessionUser.access_token)
-            console.log(moment.tz("Africa/Lagos").unix() > (moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()))
-            console.log(moment.tz("Africa/Lagos").unix())
-            console.log(moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix())
+            // console.log(moment.tz("Africa/Lagos").unix() > (moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()))
+            // console.log(moment.tz("Africa/Lagos").unix())
+            // console.log(moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix())
 
             if (moment.tz("Africa/Lagos").unix() > moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()) {
                 let response = new BaseResponse(false, 'Invalid Token', failureCode, {})

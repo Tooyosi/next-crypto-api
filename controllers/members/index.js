@@ -48,5 +48,34 @@ module.exports = {
             return res.status(400)
                 .send(response)            
         }
+    }),
+    getReferrals: ('/', async(req, res)=>{
+        let {id} = req.params
+        let {offset} = req.query
+        let response
+        try {
+            let members = await Models.Members.findAndCountAll({
+                where:{
+                    sponsor_id: id
+                },
+                attributes: ['user_id', 'current_stage'],
+                offset: offset? Number(offset): 0,
+                limit: 10,
+                include: [{
+                    model: Models.User,
+                    as: 'attributes',
+                    attributes: ['firstname', 'lastname', 'email']
+                }]
+            })
+            
+            response = new BaseResponse(successStatus, successStatus, successCode, members)
+            res.status(200).send(response) 
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)  
+            
+        }
     })
 }

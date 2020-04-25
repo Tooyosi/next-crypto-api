@@ -44,6 +44,40 @@ router.get('/:id/downlines',authenticate, protected,refresh, membersController.g
 
 /**
 * @swagger
+* /members/{id}/referrals:
+*   get:
+*     summary:  Fetch all members referrals .
+*     tags: [Members]
+*     description: This Route fetches all members referrals.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id  
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: query
+*         name: offset   
+*         schema:
+*           type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/:id/referrals',authenticate, protected,refresh, isLoggedUser, membersController.getReferrals)
+
+/**
+* @swagger
 * /members/{id}:
 *   get:
 *     summary:  Fetch a members detail .

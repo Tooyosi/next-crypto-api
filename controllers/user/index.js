@@ -599,7 +599,7 @@ module.exports = {
             await userAccount.update({
                 balance: newUserBalance
             })
-            await createNotifications(id, `New Investment of ${amount} made`, date)
+            await createNotifications(id, `New Investment of $${amount} made`, date)
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {
@@ -653,7 +653,7 @@ module.exports = {
                 date_updated: date,
                 isRedeemed: true
             })
-            await createNotifications(id, `Account Credit of ${investment.current_amount} from Redeemed investment`, date)
+            await createNotifications(id, `Account Credit of $${investment.current_amount} from Redeemed investment`, date)
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {
@@ -703,7 +703,7 @@ module.exports = {
                 date_updated: date,
                 isRedeemed: true
             })
-            await createNotifications(id, `Account Credit of ${investment.amount_invested} from Canceled investment`, date)
+            await createNotifications(id, `Account Credit of $${investment.amount_invested} from Canceled investment`, date)
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {

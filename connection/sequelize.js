@@ -9,6 +9,7 @@ const TransactionsModel = require("../models/transactions");
 const TransfersModel = require("../models/transfer");
 const NotificationsModel = require("../models/notifications");
 const InvestmentsModel = require("../models/investments");
+const CommissionsModel = require("../models/commissions");
 
 
 
@@ -24,6 +25,7 @@ models.Transactions = TransactionsModel(sequelize, Sequelize)
 models.Transfers = TransfersModel(sequelize, Sequelize)
 models.Notifications = NotificationsModel(sequelize, Sequelize)
 models.Investments = InvestmentsModel(sequelize, Sequelize)
+models.Commissions = CommissionsModel(sequelize, Sequelize)
 
 models.Notifications.belongsTo(models.User, {
     onDelete: 'CASCADE',

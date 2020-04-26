@@ -1,7 +1,8 @@
 const models = require('../connection/sequelize');
 const getDownlines = require('./getDownlines')
 let sendMail = require('./sendMail')
-
+let {convertDate} = require('../helpers/index')
+let notificationCreate = require('../helpers/createNotification')
 let ancestors = async (id) => {
     let members
     members = await models.Members.findOne({
@@ -36,9 +37,14 @@ let ancestors = async (id) => {
         if (a == n) {
             return a
         } else if (parent.children !== undefined && parent.children.length >= 5) {
+            let newAncestorStage, bonusAmount;
             // a++;
             // console.log(parent.children.length)
-
+            let parentAccount = await models.Account.findOne({
+                where:{
+                    user_id: parent.user_id
+                }
+            })
             if (parent.children.length >= 5) {
                 if (parent.current_stage == 1) {
                     // console.log(parent.children.length)
@@ -61,10 +67,11 @@ let ancestors = async (id) => {
                     }
                     // check if registered by admin
                     await parent.update(updateObj)
+                    bonusAmount = 100
+                    newAncestorStage = 1
                 }
 
             }
-            let newAncestorStage, bonusAmount;
             // check the depth and assign the appropriate stages
             // if (parent.children[4] && parent.children[4].children !== undefined && parent.children[4].children.length == 5 && parent.children[3] && parent.children[3].children !== undefined && parent.children[3].children.length == 5 && parent.children[2] && parent.children[2].children !== undefined && parent.children[2].children.length == 5 && parent.children[1] && parent.children[1].children !== undefined && parent.children[1].children.length == 5 && parent.children[0].children != undefined && parent.children[0].children.length == 5) {
 
@@ -128,6 +135,9 @@ let ancestors = async (id) => {
                     }
                     // check if registered by admin
                     await parent.update(updateObj)
+                    bonusAmount = 375
+                    newAncestorStage = 2
+
                 }
             } else if (parent.current_stage == 3) {
                 let update = 0
@@ -153,6 +163,9 @@ let ancestors = async (id) => {
                     }
                     // check if registered by admin
                     await parent.update(updateObj)
+                    bonusAmount = 1250
+                    newAncestorStage = 3
+
                 }
             } else if (parent.current_stage == 4) {
                 let update = 0
@@ -178,6 +191,9 @@ let ancestors = async (id) => {
                     }
                     // check if registered by admin
                     await parent.update(updateObj)
+                    bonusAmount = 3125
+                    newAncestorStage = 4
+
                 }
             } else if (parent.current_stage == 5) {
                 let update = 0
@@ -203,6 +219,9 @@ let ancestors = async (id) => {
                     }
                     // check if registered by admin
                     await parent.update(updateObj)
+                    bonusAmount = 15625
+                    newAncestorStage = 5
+
 
                     // clear all users associated
                     let allDownlines = await models.Members.findAll({
@@ -220,122 +239,23 @@ let ancestors = async (id) => {
                     })
                 }
             }
-            // what im doing here is checking if the fourth level is defined and has two downlines
 
-            if (newAncestorStage !== undefined) {
-                let stageAward
-                let awardNotification
-                let awards
-                let awardNotificationCreate
-                let awardObj = {
-                    user_id: parent.user_id,
-                    status: 'Pending',
-                    date: dateValue
-                }
-                let updatedUserTable = await models.User.findOne({
-                    where: {
-                        user_id: parent.user_id
-                    }
-                })
-                switch (newAncestorStage) {
-                    case 3:
-                        // completed stage 2
-                        stageAward = await awardTypes(2);
-                        let randomId = Math.floor((Math.random() * stageAward.length) + 1);
-                        awardObj.award_type_id = randomId
-                        let id
-                        stageAward.forEach(award => {
-                            if (randomId == award.award_type_id) {
-                                id = award
-                            }
-                        })
-                        awardNotification = `Congratulations, you have received award of ${id.name} for completing stage ${(Number(newAncestorStage) - 1)}.`
-                        // create new award
-                        awards = await models.Awards.create(awardObj);
+            if (bonusAmount !== undefined) {
+                let date = convertDate(Date.now())
+               let newCommission = await models.Commissions.create({
+                commission_type_id: 1,
+                user_id: parent.user_id,
+                amount: bonusAmount,
+                date: date
+               })
 
-                        // add notification for award
-                        awardNotificationCreate = await notificationCreate(parent.user_id, awardNotification, dateValue);
+               let newBalance = Number(parentAccount.balance) + bonusAmount
+               parentAccount.update({
+                   balance: newBalance,
+                   date_updated: date
+               })
 
-                        break;
-                    case 4:
-                        // complete stage 3
-                        stageAward = await awardTypes(3);
-                        awardObj.award_type_id = stageAward[0].award_type_id
-                        awardNotification = `Congratulations, you have received award of ${stageAward[0].name} for completing stage ${(Number(newAncestorStage) - 1)}.`
-                        // create new award
-                        awards = await models.Awards.create(awardObj);
-
-                        // add notification for award
-                        awardNotificationCreate = await notificationCreate(parent.user_id, awardNotification, dateValue);
-
-                        break;
-                    case 5:
-                        // complete stage 4
-                        stageAward = await awardTypes(4);
-                        awardObj.award_type_id = stageAward[0].award_type_id
-                        awardNotification = `Congratulations, you have received award of ${stageAward[0].name} for completing stage ${(Number(newAncestorStage) - 1)}.`
-                        // create new award
-                        awards = await models.Awards.create(awardObj);
-
-                        // add notification for award
-                        awardNotificationCreate = await notificationCreate(parent.user_id, awardNotification, dateValue);
-
-                        break;
-                    case 6:
-                        // complete stage 5
-                        stageAward = await awardTypes(5);
-                        awardObj.award_type_id = stageAward[0].award_type_id
-                        awardNotification = `Congratulations, you have received award of ${stageAward[0].name} for completing stage ${(Number(newAncestorStage) - 1)}.`
-                        // create new award
-                        awards = await models.Awards.create(awardObj);
-                        let updatedUserTable = await models.User.findOne({
-                            where: {
-                                user_id: parent.user_id
-                            }
-                        })
-                        await updatedUserTable.update({
-                            isCompleted: 1
-                        })
-                        // add notification for award
-                        awardNotificationCreate = await notificationCreate(parent.user_id, awardNotification, dateValue);
-
-                        break;
-                }
-
-                let updateParent = await parent.update({
-                    current_stage: newAncestorStage
-                })
-                let parentNotification = await notificationAndAccount(parent.user_id, `Congratulations, You have been upgraded to stage ${newAncestorStage} and received a bonus of $${bonusAmount}`, bonusAmount, dateValue)
-
-                let ancestorUpline = await models.Members.findOne({
-                    where: {
-                        user_id: parent.upline_id
-                    }
-                })
-                let ancestorBonus = await models.Bonus.create({
-                    user_id: parent.user_id,
-                    bonus_type_id: 2,
-                    amount: bonusAmount,
-                    date: dateValue
-                })
-
-                await transferCreate(updatedUserTable.user_id, `Stage ${newAncestorStage} Matrix bonus`, dateValue, bonusAmount, 'Right Steps', `${updatedUserTable.firstname} ${updatedUserTable.lastname}`)
-
-                if (ancestorUpline !== null) {
-                    let uplineBonus = (bonusAmount * 0.1)
-                    let ancestorUplineBonus = await models.Bonus.create({
-                        user_id: ancestorUpline.user_id,
-                        bonus_type_id: 3,
-                        amount: uplineBonus,
-                        date: dateValue
-                    })
-                    let parentUplineNotification = await notificationAndAccount(ancestorUpline.user_id, `Congratulations, You have received a bonus of $${uplineBonus} for the upgrade of your downline ${parent.attributes.username} to stage ${newAncestorStage}`, uplineBonus, dateValue)
-                    await transferCreate(ancestorUpline.user_id, `${updatedUserTable.firstname} ${updatedUserTable.lastname}'s stage ${newAncestorStage} matching Bonus`, dateValue, uplineBonus, 'Right Steps', `${updatedUserTable.firstname} ${updatedUserTable.lastname}`)
-
-                }
-                console.log(parent.attributes.username, "here")
-                return updateStage(parent, updateParent, n, a++)
-
+               await notificationCreate(parent.user_id, `New commission of $${bonusAmount} recieved for completing stage ${newAncestorStage}`, date)
             }
             // }
             a++

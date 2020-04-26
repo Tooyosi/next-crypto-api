@@ -35,7 +35,7 @@ module.exports = {
                     id: req.user.user_id,
                     isAdmin: req.user.user_type.dataValues.user_type == "admin" ? true : false
                 }, process.env.SESSION_SECRET, {
-                    // expiresIn: 60*2
+                    expiresIn: '3 hours'
                 });
                 let user = {
                     id: req.user.user_id,
@@ -81,13 +81,21 @@ module.exports = {
             let sessionUser = await Models.User.findOne({
                 where: {
                     user_id: req.user.id
-                }
+                },
+                include: {
+                    model: Models.UserType,
+                    as: 'user_type',
+                    attributes: ['user_type']
+    
+                },
             })
             let { dataValues } = sessionUser
             if (dataValues.refresh_token == refreshToken) {
                 req.token = jwt.sign({
                     id: dataValues.user_id,
+                    isAdmin: dataValues.user_type.dataValues.user_type == "admin" ? true : false,
                 }, process.env.SESSION_SECRET, {
+                    expiresIn: '3 hours'
                 });
                 let refreshToken = dataValues.user_id.toString() + '.' + crypto.randomBytes(40).toString('hex');
 

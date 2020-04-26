@@ -35,14 +35,21 @@ module.exports = {
                 },
                 attributes:["current_stage", "referral_id"] 
             })
+            let downlinesCount = await Models.Members.count({
+                where: {
+                    sponsor_id: id
+                }
+            })
+            console.log(downlinesCount) 
             if(member != null && member != undefined){
-                response = new BaseResponse(successStatus, successStatus, successCode, member)
-                return res.status(200).send(response)
+                response = new BaseResponse(successStatus, successStatus, successCode, {current_stage: member.current_stage, referral_id: member.referral_id, referrals :downlinesCount})
+                return res.status(200).json(response)
             }else{
                 response = new BaseResponse(failureStatus, "Member not found", failureCode, {})
                 return res.status(404).send(response)
             }        
         } catch (error) {
+            console.log(error)
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)

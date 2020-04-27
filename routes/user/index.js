@@ -645,4 +645,37 @@ router.get('/:id/investment/:investmentId/cancel',authenticate,protected, refres
 
 router.get('/:id/investment',authenticate,protected, refresh, isLoggedUser, userController.getInvestments)
 
+
+/**
+* @swagger
+* /user/{id}/balance:
+*   get:
+*     summary:  Fetch users balance .
+*     tags: [User]
+
+*     description: This Route fetches a user's balance on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+
+router.get('/:id/balance',authenticate,protected, refresh, isLoggedUser, userController.fetchBalance)
+
 module.exports = router

@@ -742,5 +742,31 @@ module.exports = {
             return res.status(400)
                 .send(response)
         }
+    }),
+    fetchBalance:('/', async(req, res)=>{
+        let {id} = req.params
+        let response
+        try {
+            let userAccount = await Models.Account.findOne({
+                where:{
+                    user_id: id
+                },
+                attributes: ["balance"]
+            })
+            if(userAccount == null || userAccount == undefined){
+                response = new BaseResponse(failureStatus, "Account Not found", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+            
+            response = new BaseResponse(successStatus, successStatus, successCode, userAccount)
+            return res.status(200).send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)
+            
+        }
     })
 }

@@ -13,7 +13,7 @@ module.exports = {
     protected: async (err, req, res, next) => {
         if (err.name === 'UnauthorizedError') {
             let response = new BaseResponse(false, err.message? err.message.toString() : 'Invalid Token', failureCode, {})
-            res.status(401).send(response);
+            res.status(403).send(response);
         } else {
 
             // next()
@@ -46,14 +46,17 @@ module.exports = {
             // console.log(moment.tz("Africa/Lagos").unix() > (moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()))
             // console.log(moment.tz("Africa/Lagos").unix())
             // console.log(moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix())
-
-            if (moment.tz("Africa/Lagos").unix() > moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()) {
+            if(dataValues.token_expiry_date == null || sessionUser.access_token == null){
+                let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
+                return res.status(403).send(response);
+            }
+            if(incomingToken !== sessionUser.access_token){
+                let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
+                return res.status(403).send(response);
+            }else if (moment.tz("Africa/Lagos").unix() > moment.tz(dataValues.token_expiry_date, "Africa/Lagos").unix()) {
                 let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
                 return res.status(401).send(response);
-            } else if(incomingToken !== sessionUser.access_token){
-                let response = new BaseResponse(false, 'Invalid Token', failureCode, {})
-                return res.status(401).send(response);
-            }else {
+            } else {
                 next()
             }
         } catch (error) {

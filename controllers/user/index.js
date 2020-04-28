@@ -93,7 +93,7 @@ module.exports = {
             } else {
                 newMember = await Models.Admin.create({
                     user_id: newUser.dataValues.user_id,
-                    referral_id: `${email}${newUser.dataValues.user_id}`,
+                    referral_id: uuid(),
                     account_id: newAccount.account_id
                 })
             }

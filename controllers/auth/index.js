@@ -153,7 +153,6 @@ module.exports = {
                 "http://" + req.headers.host + "/reset/" + resetToken + "\n\n" +
                 "If you did not request this, please ignore and your password would remain unchanged", async (err) => {
                     if (err) {
-                        console.log(err)
                         logger.error(err)
                         response = new BaseResponse(failureStatus, "An error occured while sending mail", failureCode, {})
                         return res.status(400).json(response)
@@ -239,6 +238,29 @@ module.exports = {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400).json(response)            
+        }
+    }),
+
+    logOut: ('/', async(req, res)=>{
+        let {id} = req.user
+        try {
+            let user = await Models.User.findOne({
+                where:{
+                    user_id: id
+                }
+            })
+            
+            await user.update({
+                access_token: null,
+                refresh_token: null,
+                token_expiry_date: null
+            })
+            response = new BaseResponse(successStatus, successStatus, successCode, {})
+            return res.status(200).json(response)  
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400).json(response)               
         }
     })
 }

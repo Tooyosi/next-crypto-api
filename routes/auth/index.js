@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router({mergeParams: true})
 const authController = require('../../controllers/auth/index')
-let {protected} = require('../../middleware/index')
+let {protected, refresh} = require('../../middleware/index')
 const expressJwt = require('express-jwt');  
 const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 
@@ -181,4 +181,30 @@ router.get('/reset/:token', authController.getResetToken)
 *         description: Unauthorized.
 */
 router.post('/reset/:token', authController.postReset)
+
+/**
+* @swagger
+* /auth/logout:
+*   get:
+*     summary:  User logout Route .
+*     tags: [Auth]
+
+*     description: This Route logs a user out and disables his session.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*     responses: 
+*       200:
+*         description: Successful.
+*       400:
+*         description: Bad Request.
+*       401:
+*         description: Unauthorized.
+*/
+router.get('/logout',authenticate, protected, refresh ,authController.logOut)
 module.exports = router

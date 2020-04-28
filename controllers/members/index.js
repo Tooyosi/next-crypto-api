@@ -40,7 +40,6 @@ module.exports = {
                     sponsor_id: id
                 }
             })
-            console.log(downlinesCount) 
             if(member != null && member != undefined){
                 response = new BaseResponse(successStatus, successStatus, successCode, {current_stage: member.current_stage, referral_id: member.referral_id, referrals :downlinesCount})
                 return res.status(200).json(response)
@@ -60,11 +59,14 @@ module.exports = {
         let {id} = req.params
         let {offset} = req.query
         let response
+        let whereObj = {}
+        if(!req.user.isAdmin){
+            whereObj.sponsor_id =  id;
+
+        }
         try {
             let members = await Models.Members.findAndCountAll({
-                where:{
-                    sponsor_id: id
-                },
+                where: whereObj,
                 attributes: ['user_id', 'current_stage'],
                 offset: offset? Number(offset): 0,
                 limit: 10,

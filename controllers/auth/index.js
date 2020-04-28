@@ -19,17 +19,17 @@ module.exports = {
 
                 let resp = info ? info : err.toString()
                 response = new BaseResponse(failureStatus, resp, failureCode, {})
-                return res.status(403).send(response)
+                return res.status(404).send(response)
             } else if (info) {
                 let resp = info;
                 response = new BaseResponse(failureStatus, resp, failureCode, {})
-                return res.status(403).send(response)
+                return res.status(404).send(response)
             }
             req.logIn(user, async function (err) {
                 if (err) {
                     let resp = err.toString()
                     response = new BaseResponse(false, resp, failureCode, {})
-                    return res.status(403).send(response)
+                    return res.status(404).send(response)
                 }
                 req.token = jwt.sign({
                     id: req.user.user_id,
@@ -43,6 +43,7 @@ module.exports = {
                     lastname: req.user.lastname,
                     email: req.user.email,
                     phone: req.user.phone,
+                    country: req.user.country,
                     accountBalance: req.user.balance.balance,
                     isAdmin: req.user.user_type.dataValues.user_type == "admin" ? true : false,
                 }

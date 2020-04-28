@@ -11,7 +11,7 @@ passport.use(new Strategy({
 },
     async (username, password, done) => {
         let userDetails = await models.User.findOne({
-            attributes: ['firstname', 'lastname', 'email', 'phone', 'isActivated', 'user_id'],
+            attributes: ['firstname', 'lastname', 'email', 'phone', 'isActivated', 'user_id', 'country'],
             where: {
                 email: username,
                 password: bin2hashData(password, process.env.PASSWORD_HASH)

@@ -102,6 +102,8 @@ router.post('/', userController.signup)
 *                type: string
 *              phone:
 *                type: string
+*              country:
+*                type: string
 *     responses: 
 *       200:
 *         description: Receive back flavor and flavor Id.
@@ -109,6 +111,79 @@ router.post('/', userController.signup)
 *         description: Bad Request.
 */
 router.put('/:id',authenticate, protected, refresh ,isLoggedUser,userController.editUser)
+
+
+/**
+* @swagger
+* /user/{id}/changePassword:
+*   put:
+*     summary:  User Change password Route .
+*     tags: [User]
+
+*     description: This Route changes a users password on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id  
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: body
+*         name: body   
+*         required: true
+*         schema:
+*            type: object
+*            required:
+*              -password
+*            properties:
+*              password:
+*                type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.put('/:id/changePassword',authenticate, protected, refresh ,isLoggedUser,userController.passwordChange)
+
+/**
+* @swagger
+* /user/{id}/account:
+*   get:
+*     summary:  User get account Route .
+*     tags: [User]
+
+*     description: This Route gets a users account details on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id  
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/:id/account',authenticate, protected, refresh ,isLoggedUser,userController.getAccount)
 
 /**
 * @swagger
@@ -167,6 +242,7 @@ router.put('/:id',authenticate, protected, refresh ,isLoggedUser,userController.
 *         description: Bad Request.
 */
 router.put('/:id/account',authenticate, protected, refresh ,isLoggedUser,userController.editAccount)
+
 
 /**
 * @swagger

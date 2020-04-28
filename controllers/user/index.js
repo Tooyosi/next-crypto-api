@@ -375,11 +375,11 @@ module.exports = {
     editUser: ('/', async (req, res) => {
         let { id } = req.params
         let response
-        let { firstname, lastname, phone } = req.body
+        let { firstname, lastname, phone, country } = req.body
         let updateObj = {
             date_updated: dateTime
         }
-        if (firstname.trim() == "" && lastname.trim() == "" && phone.trim() == "") {
+        if (firstname.trim() == "" && lastname.trim() == "" && phone.trim() == "" && country.trim() == "") {
             response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
             return res.status(400)
                 .send(response)
@@ -395,6 +395,9 @@ module.exports = {
         if (lastname && lastname.trim() !== "") {
             updateObj.lastname = lastname
         }
+        if (country && country.trim() !== "") {
+            updateObj.country = country
+        }
         if (phone && phone.length == 11) {
             updateObj.phone = phone
         }
@@ -403,7 +406,7 @@ module.exports = {
                 where: {
                     user_id: id
                 },
-                attributes: ["firstname", "lastname", "phone", "user_id"]
+                attributes: ["firstname", "lastname", "phone", "user_id", "country"]
             })
 
             if (user == null || user == undefined) {
@@ -423,7 +426,68 @@ module.exports = {
                 .send(response)
         }
     }),
+    passwordChange: ('/', async(req, res)=>{
+        let { id } = req.params
+        let {password} = req.body
+        if(password.trim() == ""){
+            response = new BaseResponse(failureStatus, "Password is required", failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+        try {
+            let user = await Models.User.findOne({
+                where:{
+                    user_id: id
+                }
+            })
+            if(user == null || user == undefined){
+                response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
 
+            if(user.password == bin2hashData(password, process.env.PASSWORD_HASH)){
+                response = new BaseResponse(failureStatus, "Can not use old password", failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+
+            await user.update({
+                password: bin2hashData(password, process.env.PASSWORD_HASH),
+                access_token: null,
+                refresh_token: null,
+                token_expiry_date: null
+            })
+            
+            response = new BaseResponse(successStatus, successStatus, successCode, "")
+            return res.status(200)
+                .send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)            
+        }
+    }),
+    getAccount: ('/', async(req, res)=>{
+        let { id } = req.params
+        try {
+            let user = await Models.Members.findOne({
+                where: {
+                    user_id: id
+                },
+                attributes:["bank_code", "account_name", "account_number", "bitcoin_wallet", "bank_name"]
+            })
+            response = new BaseResponse(successStatus, successStatus, successCode, user)
+            return res.status(200)
+                .send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)            
+        }
+    }),
     editAccount: ('/', async (req, res) => {
         let { id } = req.params
         let { accountName, accountNumber, bankName, bankCode, bitcoinWallet } = req.body;

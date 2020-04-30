@@ -150,7 +150,7 @@ module.exports = {
             let mailSend = new SendMail("Gmail")
             mailSend.dispatch(email, "Next Crypto", "Reset Password", "You are recieving this because you have requested a password reset" +
                 "Please click on the following link, or paste into your browser to complete the process \n\n" +
-                "http://" + req.headers.host + "/reset/" + resetToken + "\n\n" +
+                "" + process.env.FRONTEND_URL + "/forgot/" + resetToken + "\n\n" +
                 "If you did not request this, please ignore and your password would remain unchanged", async (err) => {
                     if (err) {
                         logger.error(err)

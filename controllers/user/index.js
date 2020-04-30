@@ -98,10 +98,10 @@ module.exports = {
                 })
             }
 
-            mailService.dispatch(email, "Next Crypto", "Registeration Successful", '<p>Next Crypto Registration Successful. kindly visit <a href="http://' + req.headers.host + '/user/' + newUser.dataValues.user_id + '/activate">this Link</a> to activate your account<p>', (err) => {
+            mailService.dispatch(email, "Next Crypto", "Registeration Successful", '<p>Next Crypto Registration Successful. kindly visit <a href="' + process.env.FRONTEND_URL + '/user/' + newUser.dataValues.user_id + '/activate">this Link</a> to activate your account<p>', (err) => {
                 if (err) {
                     // logger.error(err)
-                    response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, kindly visit http://${req.headers.host}/user/${newUser.dataValues.user_id}/activate to activate your account`)
+                    response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, kindly visit ${process.env.FRONTEND_URL}/user/${newUser.dataValues.user_id}/activate to activate your account`)
 
                 } else {
                     response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, we have sent an activation link to your email ${email}. Please click the link to verify your email address and activate your Next crypto account`)

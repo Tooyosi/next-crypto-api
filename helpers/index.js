@@ -19,6 +19,9 @@ module.exports = {
     convertDate: (date) => {
         return moment.tz(date, "Africa/Lagos").format().slice(0, 19).replace('T', ' ')
     },
+    getDay: (day)=>{
+        return moment(day).format('YYYY-MM-DD')
+    },
     successCode: "00",
     failureCode: "99",
     failureStatus: "Failed",

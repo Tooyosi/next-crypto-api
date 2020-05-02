@@ -301,7 +301,7 @@ router.get('/:email', userController.validateMail)
 /**
 * @swagger
 * /user/search/{searchTerm}:
-*   post:
+*   get:
 *     summary:  User search Route .
 *     tags: [User]
 
@@ -331,7 +331,7 @@ router.get('/:email', userController.validateMail)
 *       400:
 *         description: Bad Request.
 */
-router.post('/search/:searchTerm',authenticate,protected, refresh,  userController.getUsers)
+router.get('/search/:searchTerm',authenticate,protected, refresh,  userController.getUsers)
 
 /**
 * @swagger
@@ -485,6 +485,48 @@ router.post('/:id/transfer',authenticate,protected, refresh, isLoggedUser, userC
 */
 
 router.get('/:id/transactions',authenticate,protected, refresh, isLoggedUser, userController.getTransactions)
+
+/**
+* @swagger
+* /user/{id}/notifications:
+*   get:
+*     summary:  Fetch all user notifications .
+*     tags: [User]
+
+*     description: This Route fetches all notifications for a user on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: query
+*         name: date  
+*         schema:
+*           type: string
+*       - in: query
+*         name: offset   
+*         required: true
+*         schema:
+*           type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+
+router.get('/:id/notifications',authenticate,protected, refresh, isLoggedUser, userController.getNotifications)
+
 
 /**
 * @swagger

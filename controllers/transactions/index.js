@@ -98,44 +98,58 @@ module.exports = {
                         return res.status(400)
                             .send(response)
                     }
-                    let exChangeRate = await apicall.makeCall("GET", "https://free.currconv.com/api/v7/convert?q=NGN_USD&compact=ultra&apiKey=8b45b064c092a5a04138")
-                    let newAmt
-                    if(exChangeRate.status){
-                        newAmt = Number(transaction.amount) / exChangeRate.response.NGN_USD
-                    }else{
-                        newAmt = Number(transaction.amount) * 356
+                    client.getBuyPrice({ 'currencyPair': 'BTC-NGN' }, async (err, info) => {
+                        let nairaValue, dollarValue
+                        if (err) {
+                            response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                            return res.status(400).send(response)
+                        }
+                        nairaValue = info.data.amount
 
-                    }
-                    let transferReciept = await apicall.makeCall("POST", `https://api.paystack.co/transferrecipient`, {
-                        type: "nuban",
-                        name: memberDetails.account_name,
-                        description: `${withdrawer.email}'s cash withdrawal`,
-                        account_number: memberDetails.account_number,
-                        bank_code: memberDetails.bank_code,
-                        currency: "NGN",
-                    })
+                        client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, async (err, dollar) => {
+                            if (err) {
+                                response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                                return res.status(400).send(response)
+                            }
+                            dollarValue = dollar.data.amount
+                            let exChangeRate = dollarValue / nairaValue
+                            let newAmt
+                            if (exChangeRate) {
+                                newAmt = Number(transaction.amount) / exChangeRate
+                            } else {
+                                newAmt = Number(transaction.amount) * 356
+                            }
+                            let transferReciept = await apicall.makeCall("POST", `https://api.paystack.co/transferrecipient`, {
+                                type: "nuban",
+                                name: memberDetails.account_name,
+                                description: `${withdrawer.email}'s cash withdrawal`,
+                                account_number: memberDetails.account_number,
+                                bank_code: memberDetails.bank_code,
+                                currency: "NGN",
+                            })
 
-                    
-                    let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, { source: "balance", reason: `${withdrawer.email}'s cash withdrawal`, amount: (Number(newAmt) * 100), recipient: `${transferReciept.response.data.recipient_code}` })
-                    if (transfer.status) {
-                        await transaction.update({
-                            transaction_status: transfer.response.data.status
+
+                            let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, { source: "balance", reason: `${withdrawer.email}'s cash withdrawal`, amount: (Number(newAmt.toFixed(2)) * 100), recipient: `${transferReciept.response.data.recipient_code}` })
+                            if (transfer.status) {
+                                await transaction.update({
+                                    transaction_status: transfer.response.data.status
+                                })
+                                let newBalance = Number(memberAccount.balance) - Number(transaction.amount)
+                                await memberAccount.update({
+                                    balance: newBalance,
+                                    date_updated: dateTime
+                                })
+                                await createNotifications(transaction.user_id, `Withdrawal request with reference ${transaction.transaction_reference} has been approved.`, dateTime)
+                                response = new BaseResponse(successStatus, successStatus, successCode, transfer.response.message)
+                                return res.status(200)
+                                    .send(response)
+                            } else {
+                                response = new BaseResponse(failureStatus, failureStatus, failureCode, transfer.response)
+                                return res.status(200)
+                                    .send(response)
+                            }
                         })
-                        let newBalance = Number(memberAccount.balance) - Number(transaction.amount)
-                        await memberAccount.update({
-                            balance: newBalance,
-                            date_updated: dateTime
-                        })
-                        await createNotifications(transaction.user_id, `Withdrawal request with reference ${transaction.transaction_reference} has been approved.`, dateTime)
-                        response = new BaseResponse(successStatus, successStatus, successCode, transfer.response.message)
-                        return res.status(200)
-                            .send(response)
-                    } else {
-                        response = new BaseResponse(failureStatus, failureStatus, failureCode, transfer.response)
-                        return res.status(200)
-                            .send(response)
-                    }
-
+                    });
                 } else if (transaction.currency == "Bitcoin" && transaction.transaction_type == "Withdrawal" && transaction.transaction_status == "pending") {
                     if (memberDetails.bitcoin_wallet == null) {
                         response = new BaseResponse(failureStatus, "Incomplete User Account Information: No BTC Wallet", failureCode, {})
@@ -150,7 +164,8 @@ module.exports = {
                             return res.status(400)
                                 .send(response)
                         }
-                        if (Number(accounts.balance.amount) < 1) {
+                        console.log(accounts.balance.amount)
+                        if (Number(accounts.balance.amount) < 0.00001) {
                             response = new BaseResponse(failureStatus, "Account Low, Kindly Top Up Bitcoin Wallet", failureCode, {})
                             return res.status(400)
                                 .send(response)
@@ -161,12 +176,14 @@ module.exports = {
 
                             btcRate = 1 / info.data.amount
 
-                            let processingFee = 0.000001
+                            let processingFee = 0.000000
                             let withdrawAmt = btcRate - processingFee
                             buyPrice = Number(transaction.amount) * btcRate
-                            console.log(btcRate, withdrawAmt)
+                            // console.log(btcRate, withdrawAmt)
+                            console.log(memberDetails.bitcoin_wallet)
                             accounts.createAddress(null, function (err, addr) {
                                 // console.log(addr.address);
+                                console.log(buyPrice);
                                 accounts.sendMoney({
                                     to: memberDetails.bitcoin_wallet,
                                     amount: buyPrice,
@@ -178,6 +195,7 @@ module.exports = {
                                         return res.status(400)
                                             .send(response)
                                     } else {
+                                        console.log(tx)
                                         await transaction.update({
                                             transaction_status: "successful"
                                         })
@@ -195,14 +213,14 @@ module.exports = {
                     return res.status(400)
                         .send(response)
                 }
-            } else if(action == "decline"){
+            } else if (action == "decline") {
                 await transaction.update({
                     transaction_status: "declined",
                 })
                 response = new BaseResponse(successStatus, successStatus, successCode, {})
                 return res.status(200)
                     .send(response)
-            }else {
+            } else {
                 response = new BaseResponse(failureStatus, "Invalid Action", failureCode, {})
                 return res.status(400)
                     .send(response)

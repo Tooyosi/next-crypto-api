@@ -1,7 +1,7 @@
 const models = require('../connection/sequelize');
 const getDownlines = require('./getDownlines')
 let sendMail = require('./sendMail')
-let {convertDate} = require('../helpers/index')
+let { convertDate } = require('../helpers/index')
 let notificationCreate = require('../helpers/createNotification')
 let ancestors = async (id) => {
     let members
@@ -41,7 +41,7 @@ let ancestors = async (id) => {
             // a++;
             // console.log(parent.children.length)
             let parentAccount = await models.Account.findOne({
-                where:{
+                where: {
                     user_id: parent.user_id
                 }
             })
@@ -59,7 +59,7 @@ let ancestors = async (id) => {
                             user_id: parent.upline_user_id !== null ? parent.upline_user_id : 0
                         }
                     })
-                    
+
                     if (parentId !== null && parentId !== undefined && parentId.current_stage == 1) {
                         updateObj.upline_user_id = null
                         updateObj.parentId = null
@@ -111,7 +111,7 @@ let ancestors = async (id) => {
             //         await parent.update(updateObj)
             //     }
             // } else
-             if (parent.current_stage == 2) {
+            if (parent.current_stage == 2) {
                 let update = 0
                 for (let i = 0; i < childArray.length; i++) {
                     if (childArray[i] >= 2) {
@@ -242,20 +242,25 @@ let ancestors = async (id) => {
 
             if (bonusAmount !== undefined) {
                 let date = convertDate(Date.now())
-               let newCommission = await models.Commissions.create({
-                commission_type_id: 1,
-                user_id: parent.user_id,
-                amount: bonusAmount,
-                date: date
-               })
+                let newCommission = await models.Commissions.create({
+                    commission_type_id: 1,
+                    user_id: parent.user_id,
+                    amount: bonusAmount,
+                    date: date
+                })
 
-               let newBalance = Number(parentAccount.balance) + bonusAmount
-               parentAccount.update({
-                   balance: newBalance,
-                   date_updated: date
-               })
+                let newBalance = Number(parentAccount.balance) + bonusAmount
 
-               await notificationCreate(parent.user_id, `New commission of $${bonusAmount} recieved for completing stage ${newAncestorStage}`, date)
+
+                await notificationCreate(parent.user_id, `New commission of $${bonusAmount} recieved for completing stage ${newAncestorStage}`, date)
+                if (newAncestorStage == 5) {
+                    await notificationCreate(parent.user_id, `New deduction of $100 as re entry fee`, date)
+                    newBalance = newBalance - 100
+                }
+                parentAccount.update({
+                    balance: newBalance,
+                    date_updated: date
+                })
             }
             // }
             a++

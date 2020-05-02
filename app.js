@@ -35,7 +35,11 @@ client.getPaymentMethods(null, async function(err, pm) {
   
 client.getAccount("primary", function (err, accounts) {
     // accounts.forEach(function(acct) {
+    //     if(!err){
     // console.log('my bal: ' + accounts.balance.amount + ' for ' + accounts.name);
+    //     }else {
+    //         console.log(err)
+    //     }
     // var args = {
     //     "amount": "12",
     //     "currency": "BTC"
@@ -55,14 +59,14 @@ client.getAccount("primary", function (err, accounts) {
     //     console.log(tx);
     // });
     // accounts.createAddress(null,function(err, addr) {
-    //     // console.log(addr.address);
+    //     console.log(addr.address);
     //     // accounts.sendMoney({
     //     //     'to': "3FAZbrJLMqzhaZvxiH81uyjDJserjSQtrF",
     //     //     'amount': '0.01',
     //     //     'currency': 'BTC'
     //     // }, function (err, tx) {
     //     //     // console.log(err)
-    //     //     // console.log(tx);
+    //     //     // console.log(tx); 
     //     // });
     //     // address = addr;
     //   });

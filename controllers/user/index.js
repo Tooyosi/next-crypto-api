@@ -3,7 +3,7 @@ const uuid = require('uuid').v4
 const router = express.Router({ mergeParams: true })
 const Models = require('../../connection/sequelize')
 const BaseResponse = require('../../helpers/ResponseClass')
-const { dateTime, successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData, convertDate } = require('../../helpers/index')
+const { dateTime, successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData, convertDate, getDay } = require('../../helpers/index')
 const { logger } = require('../../loggers/logger')
 const SendMail = require('../../helpers/SendMail')
 let getAncestors = require('../../helpers/getAncestors')
@@ -312,12 +312,45 @@ module.exports = {
                 .send(response)
         }
     }),
+    getNotifications: ('/', async (req, res) => {
+        let { id } = req.params
+        let { date, offset } = req.query
+        let whereObj = {
+            user_id: id
+        }
+        
+        if (date && date !== "") {
+            let lessDate = new Date(date)
+                lessDate.setDate(lessDate.getDate() + 1);
+                whereObj.date = {
+                    [Op.gt]: getDay(incomingDate),
+                    [Op.lt]: getDay(lessDate)
+                  }
+            // whereObj.date = date
+        }
+
+        try {
+            let allNotifications = await Models.Notifications.findAndCountAll({
+                where: whereObj,
+                offset: offset ? Number(offset) : offset,
+                limit: 10,
+                order: [['notification_id', 'DESC']],
+            })
+            response = new BaseResponse(successStatus, successStatus, successCode, allNotifications)
+            return res.status(200).send(response)
+        } catch (error) {
+            logger.error(error.toString())
+            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+            return res.status(400)
+                .send(response)
+        }
+    }),
 
     transfer: ('/', async (req, res) => {
         let { id } = req.params
         let { recepientId, amount } = req.body
         let response;
-        if (amount < 0) {
+        if (amount < 1) {
             console.log(req.user.id, id)
             response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
             return res.status(400)
@@ -360,6 +393,12 @@ module.exports = {
 
             await recepient.update({
                 balance: newRecepientBalance
+            })
+            await Models.Transfers.create({
+                sender_id: id,
+                recepient_id: recepientId,
+                date: convertDate(Date.now()),
+                amount: amount
             })
             response = new BaseResponse(successStatus, successStatus, successCode, "Transfer Successful")
             return res.status(200)
@@ -618,7 +657,8 @@ module.exports = {
                         }
                     }]
                 },
-                offset: Number(offset),
+                attributes: ["user_id", "firstname", "lastname", "email", "phone", "country"],
+                offset: offset? Number(offset) : 0,
                 limit: 10
 
             })

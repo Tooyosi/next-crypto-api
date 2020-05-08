@@ -80,7 +80,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(passport.initialize())
 app.use(passport.session())
 app.use(function (req, res, next) {
-    var allowedOrigins = ['http://localhost:8080', 'https://www.rightstepsfoundation.org', 'https://rightstepsfoundation.org', 'http://017a3346.ngrok.io'];
+    var allowedOrigins = ['http://localhost:8080', 'https://www.rightstepsfoundation.org', 'https://rightstepsfoundation.org', 'http://8622da1b.ngrok.io'];
     var origin = req.headers.origin;
 
     if (allowedOrigins.includes(origin)) {
@@ -97,11 +97,13 @@ const authRoutes = require('./routes/auth/index')
 const transactionsRoutes = require('./routes/transactions/index')
 const fisRoutes = require('./routes/fis/index')
 const membersRoutes = require('./routes/members/index')
+const tradeRoutes = require('./routes/trade/index')
 app.use('/user', userRoutes)
 app.use('/auth', authRoutes)
 app.use('/transactions', transactionsRoutes)
 app.use('/fis', fisRoutes)
 app.use('/members', membersRoutes)
+app.use('/trade', tradeRoutes)
 
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

@@ -37,11 +37,6 @@ router.get('/', fisController.loadFis)
 *     consumes:
 *       — application/json
 *     parameters:
-*       - name: Authorization
-*         in: header
-*         description: Bearer token
-*         type: string
-*         required: true
 *       - in: body
 *         name: body   
 *         required: true
@@ -51,8 +46,8 @@ router.get('/', fisController.loadFis)
 *            properties:
 *              btc:
 *                type: string
-*              refreshToken:
-*                naira: string
+*              naira:
+*                type: string
 *
 *     responses: 
 *       200:

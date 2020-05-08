@@ -25,12 +25,7 @@ module.exports = {
                 response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
                 return res.status(400).send(response)
             }
-            let dollar = await client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, (err, info) => {
-                // return info
-                console.log(info.data.amount, "dollar")
-
-            })
-            console.log(dollar)
+            
             if (btc.trim() !== "") {
                 console.log(info.data.amount, "naira")
                 let btcValue = (info.data.amount * Number(btc))

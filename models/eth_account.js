@@ -13,7 +13,11 @@ module.exports = function(sequelize, DataTypes) {
     'user_id': {
       type: DataTypes.INTEGER(11),
       allowNull: false,
-      comment: "null"
+      comment: "null",
+      references: {
+        model: 'user',
+        key: 'user_id'
+      }
     },
     'balance': {
       type: DataTypes.STRING(255),

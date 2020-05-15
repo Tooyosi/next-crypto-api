@@ -22,7 +22,11 @@ module.exports = function(sequelize, DataTypes) {
     'wallet_address': {
       type: DataTypes.STRING(255),
       allowNull: true,
-      comment: "null"
+      comment: "null",
+      unique: {
+        args: true,
+        msg: 'An error occured, kindly try again!'
+      }
     },
     'currency': {
       type: DataTypes.STRING(255),

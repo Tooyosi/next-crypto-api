@@ -2,6 +2,7 @@ const Sequelize = require('sequelize');
 
 const UserModel = require("../models/user");
 const AccountModel = require("../models/account");
+const EthAccountModel = require("../models/eth_account");
 const MembersModel = require("../models/members");
 const AdminModel = require("../models/admins");
 const UserTypeModel = require("../models/user_types");
@@ -20,6 +21,7 @@ const sequelize = require('./index')
 var models = {}
 models.User = UserModel(sequelize, Sequelize)
 models.Account = AccountModel(sequelize, Sequelize)
+models.EthAccount = EthAccountModel(sequelize, Sequelize)
 models.Members = MembersModel(sequelize, Sequelize)
 models.Admin = AdminModel(sequelize, Sequelize)
 models.UserType = UserTypeModel(sequelize, Sequelize)
@@ -70,6 +72,12 @@ models.Admin.belongsTo(models.User, {
     as: 'details'
 });
 models.Account.belongsTo(models.User, {
+    onDelete: 'CASCADE',
+    foreignKey: 'user_id',
+    as: 'account'    
+})
+
+models.EthAccount.belongsTo(models.User, {
     onDelete: 'CASCADE',
     foreignKey: 'user_id',
     as: 'account'    

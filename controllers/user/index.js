@@ -111,8 +111,14 @@ module.exports = {
                         balance: 0,
                         date_updated: convertDate(Date.now())
                     })
+
+                    let newEthAccount = await Models.EthAccount.create({
+                        user_id: newUser.dataValues.user_id,
+                        balance: 0,
+                        date_updated: convertDate(Date.now())
+                    })
                     let newMember
-                    console.log(isAdmin)
+
                     if (isAdmin == false || isAdmin == "false") {
                         newMember = await Models.Members.create({
                             user_id: newUser.dataValues.user_id,
@@ -248,12 +254,12 @@ module.exports = {
             user_id: id,
             transaction_reference: newReference
         }
-        if (Number(amount) < 1) {
-            response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
-            return res.status(400)
-                .send(response)
+        // if (Number(amount) < 1) {
+        //     response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
+        //     return res.status(400)
+        //         .send(response)
 
-        }
+        // }
         if ((type == 2 && currency == 1) && (!reference || reference.trim() == "")) {
             response = new BaseResponse(failureStatus, "Payment Reference Is not defined", failureCode, {})
             return res.status(400)
@@ -402,7 +408,7 @@ module.exports = {
         let { id } = req.params
         let { recepientId, amount } = req.body
         let response;
-        if (amount < 1) {
+        if (amount < 0.001) {
             response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
             return res.status(400)
                 .send(response)
@@ -939,38 +945,20 @@ module.exports = {
                     response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
                     return res.status(400).send(response)
                 }
-                let foundUser = await Models.UserAddress.findAll({
-                    where: {
-                        user_id: id
-                    }
-                })
-                let createNew = async () => {
-
+                try {
                     let userAddress = await Models.UserAddress.create({
                         user_id: id,
                         wallet_address: addr.address,
                         date_created: convertDate(Date.now()),
                         currency: type
                     })
+                } catch (error) {
+                    logger.error(error.toString())
+                    response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+                    return res.status(400)
+                        .send(response)
                 }
-                if (foundUser.length > 0) {
-                    let usr
-                    await foundUser.forEach(async (user, i) => {
-                        if (user.currency == type) {
-                            usr = user
-                        } 
-                    })
-                    if(usr !== undefined && usr !== null){
-                        await usr.update({
-                            wallet_address: addr.address,
-                            date_updated: convertDate(Date.now())
-                        })
-                    } else {
-                        await createNew()
-                    }
-                } else {
-                    await createNew()
-                }
+
                 let response = new BaseResponse(successStatus, successStatus, successCode, { walletAddress: addr.address })
                 return res.status(200).send(response)
 

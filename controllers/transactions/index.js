@@ -98,6 +98,8 @@ module.exports = {
                         return res.status(400)
                             .send(response)
                     }
+
+
                     client.getBuyPrice({ 'currencyPair': 'BTC-NGN' }, async (err, info) => {
                         let nairaValue, dollarValue
                         if (err) {
@@ -106,49 +108,51 @@ module.exports = {
                         }
                         nairaValue = info.data.amount
 
-                        client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, async (err, dollar) => {
-                            if (err) {
-                                response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
-                                return res.status(400).send(response)
-                            }
-                            dollarValue = dollar.data.amount
-                            let exChangeRate = dollarValue / nairaValue
-                            let newAmt
-                            if (exChangeRate) {
-                                newAmt = Number(transaction.amount) / exChangeRate
-                            } else {
-                                newAmt = Number(transaction.amount) * 356
-                            }
-                            let transferReciept = await apicall.makeCall("POST", `https://api.paystack.co/transferrecipient`, {
-                                type: "nuban",
-                                name: memberDetails.account_name,
-                                description: `${withdrawer.email}'s cash withdrawal`,
-                                account_number: memberDetails.account_number,
-                                bank_code: memberDetails.bank_code,
-                                currency: "NGN",
-                            })
+                        // client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, async (err, dollar) => {
+                        //     if (err) {
+                        //         response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                        //         return res.status(400).send(response)
+                        //     }
+                        // dollarValue = dollar.data.amount
+                        // let exChangeRate = dollarValue / nairaValue
+                        let newAmt = (info.data.amount * Number(transaction.amount))
+                        // if (exChangeRate) {
+                        //     newAmt = Number(transaction.amount) / exChangeRate
+                        // } else {
+                        //     newAmt = Number(transaction.amount) * 356
+                        // }
 
-
-                            let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, { source: "balance", reason: `${withdrawer.email}'s cash withdrawal`, amount: (Number(newAmt.toFixed(2)) * 100), recipient: `${transferReciept.response.data.recipient_code}` })
-                            if (transfer.status) {
-                                await transaction.update({
-                                    transaction_status: transfer.response.data.status
-                                })
-                                let newBalance = Number(memberAccount.balance) - Number(transaction.amount)
-                                await memberAccount.update({
-                                    balance: newBalance,
-                                    date_updated: dateTime
-                                })
-                                await createNotifications(transaction.user_id, `Withdrawal request with reference ${transaction.transaction_reference} has been approved.`, dateTime)
-                                response = new BaseResponse(successStatus, successStatus, successCode, transfer.response.message)
-                                return res.status(200)
-                                    .send(response)
-                            } else {
-                                response = new BaseResponse(failureStatus, failureStatus, failureCode, transfer.response)
-                                return res.status(200)
-                                    .send(response)
-                            }
+                        
+                        let transferReciept = await apicall.makeCall("POST", `https://api.paystack.co/transferrecipient`, {
+                            type: "nuban",
+                            name: memberDetails.account_name,
+                            description: `${withdrawer.email}'s cash withdrawal`,
+                            account_number: memberDetails.account_number,
+                            bank_code: memberDetails.bank_code,
+                            currency: "NGN",
                         })
+
+
+                        let transfer = await apicall.makeCall("POST", `https://api.paystack.co/transfer`, { source: "balance", reason: `${withdrawer.email}'s cash withdrawal`, amount: (Number(newAmt.toFixed(2)) * 100), recipient: `${transferReciept.response.data.recipient_code}` })
+                        if (transfer.status) {
+                            await transaction.update({
+                                transaction_status: transfer.response.data.status
+                            })
+                            let newBalance = Number(memberAccount.balance) - Number(transaction.amount)
+                            await memberAccount.update({
+                                balance: newBalance,
+                                date_updated: dateTime
+                            })
+                            await createNotifications(transaction.user_id, `Withdrawal request with reference ${transaction.transaction_reference} has been approved.`, dateTime)
+                            response = new BaseResponse(successStatus, successStatus, successCode, transfer.response.message)
+                            return res.status(200)
+                                .send(response)
+                        } else {
+                            response = new BaseResponse(failureStatus, failureStatus, failureCode, transfer.response)
+                            return res.status(200)
+                                .send(response)
+                        }
+                        // })
                     });
                 } else if (transaction.currency == "Bitcoin" && transaction.transaction_type == "Withdrawal" && transaction.transaction_status == "pending") {
                     if (memberDetails.bitcoin_wallet == null) {
@@ -189,7 +193,8 @@ module.exports = {
                                 nairaRate = (250 + 116.58) / nairaPrice
                                 let processingFee = 0.000000
                                 let withdrawAmt = btcRate - processingFee
-                                buyPrice = (Number(transaction.amount) * btcRate) - nairaRate
+                                buyPrice = (Number(transaction.amount)) - nairaRate
+                                
                                 accounts.createAddress(null, function (err, addr) {
                                     if (err) {
                                         logger.error(err.toString())
@@ -199,7 +204,7 @@ module.exports = {
                                     }
                                     accounts.sendMoney({
                                         to: memberDetails.bitcoin_wallet,
-                                        amount: buyPrice,
+                                        amount: buyPrice.toFixed(7),
                                         currency: 'BTC'
                                     }, async function (err, tx) {
                                         if (err) {

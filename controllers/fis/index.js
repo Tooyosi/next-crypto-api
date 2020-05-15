@@ -27,7 +27,6 @@ module.exports = {
             }
             
             if (btc.trim() !== "") {
-                console.log(info.data.amount, "naira")
                 let btcValue = (info.data.amount * Number(btc))
                 let response = new BaseResponse(successStatus, successStatus, successCode, { btc: btc, naira: btcValue })
                 return res.status(200).send(response)

@@ -33,6 +33,7 @@ module.exports = {
                 }
                 req.token = jwt.sign({
                     id: req.user.user_id,
+                    isAffiliate: req.user.isAffiliate,
                     isAdmin: req.user.user_type.dataValues.user_type == "admin" ? true : false
                 }, process.env.SESSION_SECRET, {
                     expiresIn: '3 hours'
@@ -44,6 +45,7 @@ module.exports = {
                     email: req.user.email,
                     phone: req.user.phone,
                     country: req.user.country,
+                    isAffiliate: req.user.isAffiliate,
                     accountBalance: req.user.balance.balance,
                     isAdmin: req.user.user_type.dataValues.user_type == "admin" ? true : false,
                 }
@@ -94,6 +96,7 @@ module.exports = {
             if (dataValues.refresh_token == refreshToken) {
                 req.token = jwt.sign({
                     id: dataValues.user_id,
+                    isAffiliate: dataValues.isAffiliate,
                     isAdmin: dataValues.user_type.dataValues.user_type == "admin" ? true : false,
                 }, process.env.SESSION_SECRET, {
                     expiresIn: '3 hours'

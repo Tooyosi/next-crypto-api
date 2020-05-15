@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router({mergeParams: true})
 const membersController = require('../../controllers/members/index')
-const {protected, refresh, isLoggedUser} = require('../../middleware/index')
+const {protected, refresh, isLoggedUser, isAffiliate} = require('../../middleware/index')
 const expressJwt = require('express-jwt');  
 const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 /**
@@ -40,7 +40,7 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *       400:
 *         description: Bad Request.
 */
-router.get('/:id/downlines',authenticate, protected,refresh, membersController.getDownlines)
+router.get('/:id/downlines',authenticate, protected,refresh, isAffiliate, membersController.getDownlines)
 
 /**
 * @swagger
@@ -74,7 +74,7 @@ router.get('/:id/downlines',authenticate, protected,refresh, membersController.g
 *       400:
 *         description: Bad Request.
 */
-router.get('/:id/referrals',authenticate, protected,refresh, isLoggedUser, membersController.getReferrals)
+router.get('/:id/referrals',authenticate, protected,refresh, isLoggedUser, isAffiliate, membersController.getReferrals)
 
 /**
 * @swagger
@@ -104,6 +104,6 @@ router.get('/:id/referrals',authenticate, protected,refresh, isLoggedUser, membe
 *       400:
 *         description: Bad Request.
 */
-router.get('/:id',authenticate, protected,refresh,isLoggedUser, membersController.fetchMemberDetails)
+router.get('/:id',authenticate, protected,refresh,isLoggedUser, isAffiliate, membersController.fetchMemberDetails)
 
 module.exports = router

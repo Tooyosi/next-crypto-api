@@ -11,7 +11,7 @@ passport.use(new Strategy({
 },
     async (username, password, done) => {
         let userDetails = await models.User.findOne({
-            attributes: ['firstname', 'lastname', 'email', 'phone', 'isActivated', 'user_id', 'country'],
+            attributes: ['firstname', 'lastname', 'email', 'phone', 'isActivated','isApproved', 'isAffiliate' ,'user_id', 'country'],
             where: {
                 email: username,
                 password: bin2hashData(password, process.env.PASSWORD_HASH)
@@ -23,7 +23,7 @@ passport.use(new Strategy({
 
             },
         })
-        if (userDetails !== null && userDetails !== undefined && userDetails.dataValues.isActivated == true) {
+        if (userDetails !== null && userDetails !== undefined && userDetails.dataValues.isActivated == true && userDetails.dataValues.isApproved == true) {
             let {dataValues} = userDetails
             let userAccount = await models.Account.findOne({
                 attributes: ['balance'],
@@ -37,6 +37,8 @@ passport.use(new Strategy({
             done(null, dataValues)
         }else if(userDetails && userDetails.dataValues.isActivated == false) {
             done(null, false, "User not activated, Kindly activate your account");
+        }else if(userDetails && userDetails.dataValues.isApproved == false) {
+            done(null, false, "User not Approved, Kindly contact support");
         }
         else {
             done(null, false, "Invalid Credentials");

@@ -1,6 +1,5 @@
 const models = require('../connection/sequelize');
 const getDownlines = require('./getDownlines')
-let sendMail = require('./sendMail')
 let { convertDate } = require('../helpers/index')
 let notificationCreate = require('../helpers/createNotification')
 let ancestors = async (id) => {

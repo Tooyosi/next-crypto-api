@@ -75,4 +75,28 @@ router.post('/btc', fisController.btcConvert)
 *         description: Bad Request.
 */
 router.get('/exchange-rate', fisController.exchangeRate)
+
+/**
+* @swagger
+* /fis/wallet:
+*   get:
+*     summary:  Gets wallet address for payment .
+*     tags: [Fis]
+
+*     description: This Gets wallet address for payment.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - in: query
+*         name: type  
+*         required: true
+*         schema:
+*           type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/wallet', fisController.getWallet)
 module.exports = router

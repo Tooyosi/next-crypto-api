@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router({mergeParams: true})
 const userController = require('../../controllers/user/index')
-const {protected, refresh, isLoggedUser} = require('../../middleware/index')
+const {protected, refresh, isLoggedUser, isAffiliate} = require('../../middleware/index')
 const expressJwt = require('express-jwt');  
 const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 /**
@@ -35,6 +35,8 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *              -phone
 *              -password
 *              -isAdmin
+*              -paymentMode
+*              -signupOption
 *              -paystackReference
 *            properties:
 *              firstname:
@@ -48,6 +50,10 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *              password:
 *                type: string
 *              uplineReferralCode:
+*                type: string
+*              paymentMode:
+*                type: string
+*              signupOption:
 *                type: string
 *              phone:
 *                type: string
@@ -796,4 +802,39 @@ router.get('/:id/investment',authenticate,protected, refresh, isLoggedUser, user
 
 router.get('/:id/balance',authenticate,protected, refresh, isLoggedUser, userController.fetchBalance)
 
+/**
+* @swagger
+* /user/{id}/generatewallet:
+*   get:
+*     summary:  Gets wallet address for a user payment .
+*     tags: [User]
+
+*     description: This Gets wallet address for payment.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: query
+*         name: type  
+*         required: true
+*         schema:
+*           type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/:id/generatewallet',authenticate,protected, refresh, isLoggedUser, userController.genrateWalletId)
 module.exports = router

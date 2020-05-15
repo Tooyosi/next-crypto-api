@@ -68,6 +68,16 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       comment: "null"
     },
+    'isApproved': {
+      type: DataTypes.INTEGER(1),
+      allowNull: false,
+      comment: "null"
+    },
+    'isAffiliate': {
+      type: DataTypes.INTEGER(1),
+      allowNull: false,
+      comment: "null"
+    },
     'date_created': {
       type: DataTypes.DATE,
       allowNull: false,
@@ -90,6 +100,16 @@ module.exports = function(sequelize, DataTypes) {
     },
     'token_expiry_date': {
       type: DataTypes.DATE,
+      allowNull: true,
+      comment: "null"
+    },
+    'payment_mode': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
+    'payment_proof': {
+      type: DataTypes.STRING(255),
       allowNull: true,
       comment: "null"
     },

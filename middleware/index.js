@@ -28,6 +28,14 @@ module.exports = {
             next()
         }
     },
+    isAffiliate: async (req, res, next) => {
+        if(!req.user.isAffiliate){
+            let response = new BaseResponse(false, 'Invalid Operation, You need to be an affiliate member to perform this operation', failureCode, {})
+            res.status(401).send(response);
+        }else{
+            next()
+        }
+    },
     refresh: async (req, res, next) => {
         try {
             let sessionUser = await models.User.findOne({

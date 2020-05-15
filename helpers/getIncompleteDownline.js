@@ -1,6 +1,5 @@
 const models = require('../connection/sequelize');
 const getDownlines = require('./getDownlines')
-let sendMail = require('./sendMail')
 
 let ancestors = async (id) => {
     let members

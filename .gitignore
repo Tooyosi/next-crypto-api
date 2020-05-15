@@ -1,3 +1,10 @@
 .env
 node_modules
 logs/logfile.log
+
+uploads/payment/*.jpg
+uploads/payment/*.jpeg
+uploads/payment/*.png
+uploads/payment/*.jpg
+uploads/payment/*.jpeg
+uploads/payment/*.png

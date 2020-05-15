@@ -39,6 +39,25 @@ module.exports = {
         });
 
     }),
+    getWallet: ('/', async(req, res)=>{
+        let {type} = req.query 
+        let response
+        client.getAccount(type, function (err, accounts) {
+            if (err){
+                response = new BaseResponse(failureStatus, err.toString(), failureCode,{} )
+                return res.status(400).send(response)
+            }
+            accounts.createAddress(null,function(err, addr) {
+                if (err){
+                    response = new BaseResponse(failureStatus, err.toString(), failureCode,{} )
+                    return res.status(400).send(response)
+                }
+                let response = new BaseResponse(successStatus, successStatus, successCode, {walletAddress: addr.address})
+                return res.status(200).send(response)
+                
+              });
+        });
+    }),
     exchangeRate: ('/', async (req, res) => {
         client.getBuyPrice({'currencyPair': 'BTC-NGN'}, async (err, info) => {
             let nairaValue, dollarValue

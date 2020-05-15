@@ -10,6 +10,12 @@ require('dotenv').config()
 var Client = require('coinbase').Client;
 var client = new Client({ 'apiKey': process.env.COINBASE_API_KEY, 'apiSecret': process.env.COINBASE_API_SECRET, strictSSL: false });
 
+client.getNotifications({}, function(err, notifications) {
+    // console.log(notifications);
+  });   
+client.getCurrentUser(function(err, user) {
+    // console.log(user);
+  });
 client.getCurrentUser(function (err, accounts) {
     // accounts.forEach(function(acct) {
     //   console.log('my bal: ' + acct.balance.amount + ' for ' + acct.name);
@@ -32,8 +38,25 @@ client.getPaymentMethods(null, async function(err, pm) {
     // console.log(pm);
   });
 
-  
-client.getAccount("primary", function (err, accounts) {
+client.getAccounts({}, function (err, accounts){
+    if(!err){
+        // console.log(accounts)
+        accounts.forEach((acct)=>{
+            // console.log(acct.name)
+        })
+    }
+})
+client.getAccount("BTC", function (err, accounts) {
+    accounts.getTransactions({}, function(err, txs) {
+        // console.log(txs);
+        // txs.forEach((tn)=>{
+        //     console.log(tn.amount)
+        //     console.log(tn.details)
+        //     console.log(tn.type)
+        //     console.log(tn.to)
+        // })
+      });
+    // console.log(err? err : accounts )
     // accounts.forEach(function(acct) {
     //     if(!err){
     // console.log('my bal: ' + accounts.balance.amount + ' for ' + accounts.name);
@@ -58,18 +81,33 @@ client.getAccount("primary", function (err, accounts) {
     // }, function (err, tx) {
     //     console.log(tx);
     // });
-    // accounts.createAddress(null,function(err, addr) {
-    //     console.log(addr.address);
-    //     // accounts.sendMoney({
-    //     //     'to': "3FAZbrJLMqzhaZvxiH81uyjDJserjSQtrF",
-    //     //     'amount': '0.01',
-    //     //     'currency': 'BTC'
-    //     // }, function (err, tx) {
-    //     //     // console.log(err)
-    //     //     // console.log(tx); 
-    //     // });
-    //     // address = addr;
-    //   });
+    accounts.getAddresses(null, function(err, addresses) {
+        // console.log(addresses.address);
+        // addresses.forEach((add, i)=>{
+        //     // console.log(add.address, i)
+        // })
+      });
+      accounts.getAddress('3APfE92TN3jrqqLQYqehCD2PABWBj8AZ24', function(err, address) {
+        // console.log(address);
+        // address.getTransactions({}, function(err, txs) {
+        //     // console.log(txs);
+        //     txs.forEach((tn)=>{
+        //         // console.log(tn.amount)
+        //     })
+        //   });
+      });
+    accounts.createAddress(null,function(err, addr) {
+        // console.log(addr.address);
+        // accounts.sendMoney({
+        //     'to': "3FAZbrJLMqzhaZvxiH81uyjDJserjSQtrF",
+        //     'amount': '0.01',
+        //     'currency': 'BTC'
+        // }, function (err, tx) {
+        //     // console.log(err)
+        //     // console.log(tx); 
+        // });
+        // address = addr;
+      });
     // accounts.getAddresses(null, function (err, addresses) {
     //     // console.log(addresses);
     // });
@@ -79,8 +117,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
 app.use(passport.initialize())
 app.use(passport.session())
+app.use('/uploads', express.static('uploads'))
 app.use(function (req, res, next) {
-    var allowedOrigins = ['http://localhost:8080', 'https://www.rightstepsfoundation.org', 'https://rightstepsfoundation.org', 'http://8622da1b.ngrok.io'];
+    var allowedOrigins = ['http://localhost:8080', 'https://www.nextcryptoasset.com', 'https://nextcryptoasset.com', 'http://058c6925.ngrok.io'];
     var origin = req.headers.origin;
 
     if (allowedOrigins.includes(origin)) {
@@ -98,12 +137,16 @@ const transactionsRoutes = require('./routes/transactions/index')
 const fisRoutes = require('./routes/fis/index')
 const membersRoutes = require('./routes/members/index')
 const tradeRoutes = require('./routes/trade/index')
+const adminRoutes = require('./routes/admin/index')
+const notificationRoutes = require('./routes/notifications/index')
 app.use('/user', userRoutes)
 app.use('/auth', authRoutes)
 app.use('/transactions', transactionsRoutes)
 app.use('/fis', fisRoutes)
 app.use('/members', membersRoutes)
 app.use('/trade', tradeRoutes)
+app.use('/admin', adminRoutes)
+app.use('/notification', notificationRoutes)
 
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

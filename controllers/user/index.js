@@ -1,118 +1,170 @@
 const express = require("express");
 const uuid = require('uuid').v4
-const router = express.Router({ mergeParams: true })
+const multer = require('multer')
 const Models = require('../../connection/sequelize')
 const BaseResponse = require('../../helpers/ResponseClass')
-const { dateTime, successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData, convertDate, getDay } = require('../../helpers/index')
+const { successCode, failureCode, validator, validationErrorMessage, failureStatus, successStatus, bin2hashData, convertDate, getDay } = require('../../helpers/index')
 const { logger } = require('../../loggers/logger')
 const SendMail = require('../../helpers/SendMail')
 let getAncestors = require('../../helpers/getAncestors')
+let getPaymentTypes = require('../../helpers/GetPaymentTypes')
 let getIncompleteDownlines = require('../../helpers/getIncompleteDownline')
 let mailService = new SendMail("Gmail");
 const updateAccount = require('../../helpers/updateAccount')
 const Op = require('sequelize').Op
 let createNotifications = require('../../helpers/createNotification');
 const moment = require('moment-timezone');
+const uploadFunction = require('../../helpers/multer')
+const upload = uploadFunction('./uploads/payment')
+var uploader = upload.single('userImage')
+var client = require('../../helpers/CoinBaseClient')
+
 module.exports = {
     signup: ('/', async (req, res) => {
-        let { firstname, lastname, email, country, uplineReferralCode, phone, password, isAdmin, paystackReference } = req.body
-        var ts = String(new Date().getTime())
-        let response, memberUplineId
-        if (firstname.trim() == "" || lastname.trim() == "" || !validator(email) || country.trim() == "" || password.trim() == "") {
-            response = new BaseResponse(failureStatus, validationErrorMessage, failureCode, {})
-            return res.status(400)
-                .send(response)
-        } if (paystackReference.trim() == "") {
-            response = new BaseResponse(failureStatus, "No payment made", failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
-        let newPhone = phone
-        if (phone.length != 11 && phone.length != 13) {
-            response = new BaseResponse(failureStatus, "Kindly Enter a valid phone number", failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
+        uploader(req, res, async (err) => {
+            if (err instanceof multer.MulterError) {
+                logger.error(err.message ? err.message : err.toString())
+                response = new BaseResponse(failureStatus, err.message ? err.message : err.toString(), failureCode, {})
+                return res.status(400)
+                    .send(response)
+            } else if (err) {
+                logger.error(err.toString())
+                response = new BaseResponse(failureStatus, err.message ? err.message : err.toString(), failureCode, {})
+                return res.status(400)
+                    .send(response)
+            } else {
+                let { firstname, lastname, email, country, uplineReferralCode, phone, password, isAdmin, paystackReference, paymentMode, signupOption } = req.body
 
-        try {
-            let uplineMember
-            if (uplineReferralCode && uplineReferralCode.trim() !== "") {
-                uplineMember = await Models.Members.findOne({
-                    where: {
-                        referral_id: uplineReferralCode
+                var ts = String(new Date().getTime())
+                let response, memberUplineId
+                if (firstname.trim() == "" || lastname.trim() == "" || !validator(email) || country.trim() == "" || password.trim() == "") {
+                    response = new BaseResponse(failureStatus, validationErrorMessage, failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                } if (signupOption == "1" && paymentMode == "4" && paystackReference.trim() == "") {
+                    response = new BaseResponse(failureStatus, "No payment made", failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                } if (signupOption == "1" && paymentMode != "4" && (req.file == null || req.file == undefined)) {
+                    response = new BaseResponse(failureStatus, "Upload proof of payment", failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                }
+                let newPhone = phone
+                if (phone.length != 11 && phone.length != 13) {
+                    response = new BaseResponse(failureStatus, "Kindly Enter a valid phone number", failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                }
+
+                try {
+                    let uplineMember
+                    if (uplineReferralCode && uplineReferralCode.trim() !== "") {
+                        uplineMember = await Models.Members.findOne({
+                            where: {
+                                referral_id: uplineReferralCode
+                            }
+                        })
+
                     }
-                })
+                    if (signupOption == "1" && uplineMember !== null && uplineMember !== undefined) {
+                        memberUplineId = { member_id: uplineMember.dataValues.member_id, user_id: uplineMember.dataValues.user_id }
+                        let allDownlines = await Models.Members.findAll({
+                            where: {
+                                parentMember_id: uplineMember.dataValues.member_id
+                            }
+                        })
 
-            }
-            if (uplineMember !== null && uplineMember !== undefined) {
-                memberUplineId = { member_id: uplineMember.dataValues.member_id, user_id: uplineMember.dataValues.user_id }
-                let allDownlines = await Models.Members.findAll({
-                    where: {
-                        parentMember_id: uplineMember.dataValues.member_id
+                        if (allDownlines.length >= 5) {
+                            let incompleteDownlines = await getIncompleteDownlines(uplineMember.dataValues.user_id)
+                            memberUplineId = incompleteDownlines[0]
+                        }
                     }
-                })
 
-                if (allDownlines.length >= 5) {
-                    let incompleteDownlines = await getIncompleteDownlines(uplineMember.dataValues.user_id)
-                    memberUplineId = incompleteDownlines[0]
+                    let isApproved = false
+                    if (paymentMode == "4" || isAdmin == true) {
+                        isApproved = true
+                    } else if (signupOption == "2") {
+                        isApproved = true
+                    } else {
+                        isApproved = false
+                    }
+                    let newUser = await Models.User.create({
+                        firstname: firstname,
+                        lastname: lastname,
+                        user_type_id: isAdmin == true ? 2 : 1,
+                        password: bin2hashData(password, process.env.PASSWORD_HASH),
+                        country: country,
+                        email: email,
+                        phone: phone,
+                        date_created: convertDate(Date.now()),
+                        payment_mode: signupOption == "1" ? getPaymentTypes(paymentMode) : null,
+                        payment_proof: req.file && req.file.path ? req.file.path : null,
+                        isAffiliate: signupOption == "1" || isAdmin == true ? true : false,
+                        isApproved: isApproved,
+                        isActivated: false,
+                        payment_reference: signupOption == "1" ? paystackReference : null
+                    })
+
+                    let newAccount = await Models.Account.create({
+                        user_id: newUser.dataValues.user_id,
+                        balance: 0,
+                        date_updated: convertDate(Date.now())
+                    })
+                    let newMember
+                    console.log(isAdmin)
+                    if (isAdmin == false || isAdmin == "false") {
+                        newMember = await Models.Members.create({
+                            user_id: newUser.dataValues.user_id,
+                            upline_user_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.user_id : null,
+                            parentId: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
+                            current_stage: 1,
+                            referral_id: `${newUser.dataValues.user_id}${uuid()}`,
+                            sponsor_id: uplineMember ? uplineMember.user_id : null,
+                            account_id: newAccount.account_id,
+                            parentMember_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
+                        })
+
+                        if (signupOption == "1") {
+                            await getAncestors(newUser.dataValues.user_id)
+                        }
+                    } else {
+                        newMember = await Models.Admin.create({
+                            user_id: newUser.dataValues.user_id,
+                            referral_id: uuid(),
+                            account_id: newAccount.account_id
+                        })
+                    }
+                    let successText
+                    if (signupOption == "1" && paymentMode != "4") {
+                        successText = 'Next Crypto Registration Successful. Your account is subject to approval'
+                    } else {
+                        successText = 'Next Crypto Registration Successful. kindly visit ' + process.env.FRONTEND_URL + '/user/' + newUser.dataValues.user_id + '/activate to activate your account'
+                    }
+                    mailService.dispatch(email, "Next Crypto", "Registeration Successful", successText, (err) => {
+                        if (err) {
+
+                            let failText
+                            if (signupOption == "1" && paymentMode != "4") {
+                                failText = 'Next Crypto Registration Successful. Your account is subject to approval'
+                            } else {
+                                failText = 'Next Crypto Registration Successful. kindly visit ' + process.env.FRONTEND_URL + '/user/' + newUser.dataValues.user_id + '/activate to activate your account'
+                            }
+                            // logger.error(err)
+                            response = new BaseResponse(successStatus, successStatus, successCode, failText)
+
+                        } else {
+                            response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, we have sent a mail to ${email}. Kindly follow the instructionsto activate your Next crypto account`)
+                        } return res.status(200).send(response)
+                    })
+                } catch (error) {
+                    logger.error(error.toString())
+                    response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+                    return res.status(400)
+                        .send(response)
                 }
             }
-            let newUser = await Models.User.create({
-                firstname: firstname,
-                lastname: lastname,
-                user_type_id: isAdmin ? 2 : 1,
-                password: bin2hashData(password, process.env.PASSWORD_HASH),
-                country: country,
-                email: email,
-                phone: phone,
-                date_created: dateTime,
-                isActivated: false,
-                payment_reference: paystackReference
-            })
-
-            let newAccount = await Models.Account.create({
-                user_id: newUser.dataValues.user_id,
-                balance: 0,
-                date_updated: dateTime
-            })
-            let newMember
-            if (!isAdmin) {
-                newMember = await Models.Members.create({
-                    user_id: newUser.dataValues.user_id,
-                    upline_user_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.user_id : null,
-                    parentId: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
-                    current_stage: 1,
-                    referral_id: uuid(),
-                    sponsor_id: uplineMember ? uplineMember.user_id : null,
-                    account_id: newAccount.account_id,
-                    parentMember_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
-                })
-
-                await getAncestors(newUser.dataValues.user_id)
-                console.log("here")
-            } else {
-                newMember = await Models.Admin.create({
-                    user_id: newUser.dataValues.user_id,
-                    referral_id: uuid(),
-                    account_id: newAccount.account_id
-                })
-            }
-
-            mailService.dispatch(email, "Next Crypto", "Registeration Successful", '<p>Next Crypto Registration Successful. kindly visit <a href="' + process.env.FRONTEND_URL + '/user/' + newUser.dataValues.user_id + '/activate">this Link</a> to activate your account<p>', (err) => {
-                if (err) {
-                    // logger.error(err)
-                    response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, kindly visit ${process.env.FRONTEND_URL}/user/${newUser.dataValues.user_id}/activate to activate your account`)
-
-                } else {
-                    response = new BaseResponse(successStatus, successStatus, successCode, `Welcome ${firstname}, we have sent an activation link to your email ${email}. Please click the link to verify your email address and activate your Next crypto account`)
-                } return res.status(200).send(response)
-            })
-        } catch (error) {
-            logger.error(error.toString())
-            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
+        })
 
     }),
 
@@ -192,7 +244,7 @@ module.exports = {
         let transObj = {
             amount: Number(amount),
             transaction_status: status !== "" ? status : "pending",
-            date: dateTime,
+            date: convertDate(Date.now()),
             user_id: id,
             transaction_reference: newReference
         }
@@ -245,7 +297,7 @@ module.exports = {
 
 
                 let newAmt = Number(userAccount.dataValues.balance) + Number(amount)
-                let update = await updateAccount(userAccount, newAmt, dateTime)
+                let update = await updateAccount(userAccount, newAmt, convertDate(Date.now()))
             }
             if (newTransaction) {
                 response = new BaseResponse(successStatus, successStatus, successCode, `Transaction with reference - ${newReference} has been created. Kindly view transactions list to monitor your transactions status`)
@@ -318,14 +370,14 @@ module.exports = {
         let whereObj = {
             user_id: id
         }
-        
+
         if (date && date !== "") {
             let lessDate = new Date(date)
-                lessDate.setDate(lessDate.getDate() + 1);
-                whereObj.date = {
-                    [Op.gt]: getDay(incomingDate),
-                    [Op.lt]: getDay(lessDate)
-                  }
+            lessDate.setDate(lessDate.getDate() + 1);
+            whereObj.date = {
+                [Op.gt]: getDay(incomingDate),
+                [Op.lt]: getDay(lessDate)
+            }
             // whereObj.date = date
         }
 
@@ -351,7 +403,6 @@ module.exports = {
         let { recepientId, amount } = req.body
         let response;
         if (amount < 1) {
-            console.log(req.user.id, id)
             response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
             return res.status(400)
                 .send(response)
@@ -416,7 +467,7 @@ module.exports = {
         let response
         let { firstname, lastname, phone, country } = req.body
         let updateObj = {
-            date_updated: dateTime
+            date_updated: convertDate(Date.now())
         }
         if (firstname.trim() == "" && lastname.trim() == "" && phone.trim() == "" && country.trim() == "") {
             response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
@@ -465,27 +516,27 @@ module.exports = {
                 .send(response)
         }
     }),
-    passwordChange: ('/', async(req, res)=>{
+    passwordChange: ('/', async (req, res) => {
         let { id } = req.params
-        let {password} = req.body
-        if(password.trim() == ""){
+        let { password } = req.body
+        if (password.trim() == "") {
             response = new BaseResponse(failureStatus, "Password is required", failureCode, {})
             return res.status(400)
                 .send(response)
         }
         try {
             let user = await Models.User.findOne({
-                where:{
+                where: {
                     user_id: id
                 }
             })
-            if(user == null || user == undefined){
+            if (user == null || user == undefined) {
                 response = new BaseResponse(failureStatus, "User not found", failureCode, {})
                 return res.status(400)
                     .send(response)
             }
 
-            if(user.password == bin2hashData(password, process.env.PASSWORD_HASH)){
+            if (user.password == bin2hashData(password, process.env.PASSWORD_HASH)) {
                 response = new BaseResponse(failureStatus, "Can not use old password", failureCode, {})
                 return res.status(400)
                     .send(response)
@@ -497,7 +548,7 @@ module.exports = {
                 refresh_token: null,
                 token_expiry_date: null
             })
-            
+
             response = new BaseResponse(successStatus, successStatus, successCode, "")
             return res.status(200)
                 .send(response)
@@ -505,17 +556,17 @@ module.exports = {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)            
+                .send(response)
         }
     }),
-    getAccount: ('/', async(req, res)=>{
+    getAccount: ('/', async (req, res) => {
         let { id } = req.params
         try {
             let user = await Models.Members.findOne({
                 where: {
                     user_id: id
                 },
-                attributes:["bank_code", "account_name", "account_number", "bitcoin_wallet", "bank_name"]
+                attributes: ["bank_code", "account_name", "account_number", "bitcoin_wallet", "bank_name"]
             })
             response = new BaseResponse(successStatus, successStatus, successCode, user)
             return res.status(200)
@@ -524,7 +575,7 @@ module.exports = {
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
-                .send(response)            
+                .send(response)
         }
     }),
     editAccount: ('/', async (req, res) => {
@@ -658,7 +709,7 @@ module.exports = {
                     }]
                 },
                 attributes: ["user_id", "firstname", "lastname", "email", "phone", "country"],
-                offset: offset? Number(offset) : 0,
+                offset: offset ? Number(offset) : 0,
                 limit: 10
 
             })
@@ -847,22 +898,22 @@ module.exports = {
                 .send(response)
         }
     }),
-    fetchBalance:('/', async(req, res)=>{
-        let {id} = req.params
+    fetchBalance: ('/', async (req, res) => {
+        let { id } = req.params
         let response
         try {
             let userAccount = await Models.Account.findOne({
-                where:{
+                where: {
                     user_id: id
                 },
                 attributes: ["balance"]
             })
-            if(userAccount == null || userAccount == undefined){
+            if (userAccount == null || userAccount == undefined) {
                 response = new BaseResponse(failureStatus, "Account Not found", failureCode, {})
                 return res.status(400)
                     .send(response)
             }
-            
+
             response = new BaseResponse(successStatus, successStatus, successCode, userAccount)
             return res.status(200).send(response)
         } catch (error) {
@@ -870,7 +921,60 @@ module.exports = {
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)
                 .send(response)
-            
+
         }
+    }),
+
+    genrateWalletId: ('/', async (req, res) => {
+        let { id } = req.params
+        let { type } = req.query
+        let response
+        client.getAccount(type, function (err, accounts) {
+            if (err) {
+                response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                return res.status(400).send(response)
+            }
+            accounts.createAddress(null, async function (err, addr) {
+                if (err) {
+                    response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                    return res.status(400).send(response)
+                }
+                let foundUser = await Models.UserAddress.findAll({
+                    where: {
+                        user_id: id
+                    }
+                })
+                let createNew = async () => {
+
+                    let userAddress = await Models.UserAddress.create({
+                        user_id: id,
+                        wallet_address: addr.address,
+                        date_created: convertDate(Date.now()),
+                        currency: type
+                    })
+                }
+                if (foundUser.length > 0) {
+                    let usr
+                    await foundUser.forEach(async (user, i) => {
+                        if (user.currency == type) {
+                            usr = user
+                        } 
+                    })
+                    if(usr !== undefined && usr !== null){
+                        await usr.update({
+                            wallet_address: addr.address,
+                            date_updated: convertDate(Date.now())
+                        })
+                    } else {
+                        await createNew()
+                    }
+                } else {
+                    await createNew()
+                }
+                let response = new BaseResponse(successStatus, successStatus, successCode, { walletAddress: addr.address })
+                return res.status(200).send(response)
+
+            });
+        });
     })
 }

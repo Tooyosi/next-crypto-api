@@ -254,8 +254,8 @@ let ancestors = async (id) => {
                         amount: bonusAmount,
                         date: date
                     })
-
-                    let newBalance = Number(parentAccount.balance) + bonusAmount.toFixed(6)
+                    let amt = bonusAmount.toFixed(6)
+                    let newBalance = Number(parentAccount.balance) + Number(amt)
 
 
                     await notificationCreate(parent.user_id, `New commission of ${bonusAmount.toFixed(6)} btc recieved for completing stage ${newAncestorStage}`, date)

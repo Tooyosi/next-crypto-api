@@ -39,6 +39,16 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true,
       comment: "null"
     },
+    'isCanceled': {
+      type: DataTypes.INTEGER(1),
+      allowNull: true,
+      comment: "null"
+    },
+    'isNotificationSent': {
+      type: DataTypes.INTEGER(1),
+      allowNull: true,
+      comment: "null"
+    },
     'due_date': {
       type: DataTypes.DATE,
       allowNull: false,

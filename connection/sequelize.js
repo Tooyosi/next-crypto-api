@@ -45,6 +45,12 @@ models.Transactions.belongsTo(models.Members, {
     as: "member"
 })
 
+models.Investments.belongsTo(models.User, {
+    onDelete: 'CASCADE',
+    foreignKey: 'user_id',
+    as: "user"
+})
+
 models.Transfers.belongsTo(models.User, {
     onDelete: 'CASCADE',
     foreignKey: 'sender_id',

@@ -441,8 +441,8 @@ module.exports = {
                     .send(response)
             }
 
-            let newSenderBalance = Number(sender.balance) - amount
-            let newRecepientBalance = Number(recepient.balance) + amount
+            let newSenderBalance = Number(sender.balance) - Number(amount)
+            let newRecepientBalance = Number(recepient.balance) + Number(amount)
 
             await sender.update({
                 balance: newSenderBalance
@@ -734,17 +734,17 @@ module.exports = {
         let { amount, dueDate } = req.body
         let date = convertDate(Date.now())
         let response
-        if (Number(amount) < 1) {
-            response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
-            return res.status(400).send(response)
-        }
+        // if (Number(amount) < 1) {
+        //     response = new BaseResponse(failureStatus, "Invalid Amount", failureCode, {})
+        //     return res.status(400).send(response)
+        // }
         try {
             let userAccount = await Models.Account.findOne({
                 where: {
                     user_id: id
                 }
             })
-            if (Number(userAccount.balance) == 0 || Number(userAccount.balance) < Number(amount)) {
+            if (Number(userAccount.balance) < Number(amount)) {
                 response = new BaseResponse(failureStatus, "Insufficient Balance", failureCode, {})
                 return res.status(400).send(response)
             }
@@ -760,7 +760,7 @@ module.exports = {
             await userAccount.update({
                 balance: newUserBalance
             })
-            await createNotifications(id, `New Investment of $${amount} made`, date)
+            await createNotifications(id, `New Investment of ${amount} made`, date)
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {
@@ -863,9 +863,9 @@ module.exports = {
             })
             await investment.update({
                 date_updated: date,
-                isRedeemed: true
+                isCanceled: true
             })
-            await createNotifications(id, `Account Credit of $${investment.amount_invested} from Canceled investment`, date)
+            await createNotifications(id, `Account Credit of ${investment.amount_invested} from Canceled investment`, date)
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200).send(response)
         } catch (error) {
@@ -893,7 +893,12 @@ module.exports = {
             let allInvestments = await Models.Investments.findAndCountAll({
                 where: whereObj,
                 offset: offset ? Number(offset) : offset,
-                limit: 10,
+                limit: 10, 
+                include: {
+                    model: Models.User,
+                    as: "user",
+                    attributes: ["user_id", "firstname", "lastname", "email"],
+                },
                 order: [['investment_id', 'DESC']],
             })
             response = new BaseResponse(successStatus, successStatus, successCode, allInvestments)
@@ -1002,13 +1007,13 @@ module.exports = {
                     }
                 })
 
-                if(Number(userAccount.balance) < deduction){
+                if(Number(userAccount.balance) < Number(deduction)){
                     response = new BaseResponse(failureStatus, "You dont have a sufficient balance to perform this operation", failureCode, {})
                     return res.status(400)
                         .send(response)
                 }
 
-                let newBalance = Number(userAccount.balance) - deduction
+                let newBalance = Number(userAccount.balance) - Number(deduction)
                 
                 mailService.dispatch(user.email, "Next Crypto", "Affiliate Account Activated", `Congratulations !! Your affiliate membership on Next Crypto has been activated. Kindly login and start referring`, (err) => {
                     

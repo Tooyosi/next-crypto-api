@@ -837,4 +837,36 @@ router.get('/:id/balance',authenticate,protected, refresh, isLoggedUser, userCon
 *         description: Bad Request.
 */
 router.get('/:id/generatewallet',authenticate,protected, refresh, isLoggedUser, userController.genrateWalletId)
+
+/**
+* @swagger
+* /user/{id}/affiliate:
+*   get:
+*     summary:  User make affiliate Route .
+*     tags: [User]
+
+*     description: This Route enables a user as an affiliate on the platform.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - name: Authorization
+*         in: header
+*         description: Bearer token
+*         type: string
+*         required: true
+*       - in: path
+*         name: id  
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/:id/affiliate',authenticate, protected, refresh ,isLoggedUser,userController.makeAffiliate)
+
 module.exports = router

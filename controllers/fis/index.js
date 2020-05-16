@@ -27,11 +27,11 @@ module.exports = {
             }
             
             if (btc.trim() !== "") {
-                let btcValue = (info.data.amount * Number(btc))
+                let btcValue = (Number(info.data.amount) * Number(btc))
                 let response = new BaseResponse(successStatus, successStatus, successCode, { btc: btc, naira: btcValue })
                 return res.status(200).send(response)
             } else if (naira.trim() !== "") {
-                let amt = Number(naira) / info.data.amount
+                let amt = Number(naira) / Number(info.data.amount)
                 let response = new BaseResponse(successStatus, successStatus, successCode, { btc: amt.toPrecision(), naira: naira })
                 return res.status(200).send(response)
             }
@@ -64,14 +64,14 @@ module.exports = {
                 response = new BaseResponse(failureStatus, err.toString(), failureCode,{} )
                 return res.status(400).send(response)
             }
-            nairaValue = info.data.amount
+            nairaValue = Number(info.data.amount)
 
             client.getBuyPrice({'currencyPair': 'BTC-USD'}, (err, dollar)=>{
                 if(err){
                     response = new BaseResponse(failureStatus, err.toString(), failureCode,{} )
                     return res.status(400).send(response)
                 }
-                dollarValue = dollar.data.amount
+                dollarValue = Number(dollar.data.amount)
                 let exRate = dollarValue/nairaValue
                 let response = new BaseResponse(successStatus, successStatus, successCode, {exchangeRate: exRate})
                 return res.status(200).send(response)

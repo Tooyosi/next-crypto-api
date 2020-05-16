@@ -106,7 +106,7 @@ module.exports = {
                             response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
                             return res.status(400).send(response)
                         }
-                        nairaValue = info.data.amount
+                        nairaValue = Number(info.data.amount)
 
                         // client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, async (err, dollar) => {
                         //     if (err) {
@@ -188,8 +188,8 @@ module.exports = {
                                     return res.status(400)
                                         .send(response)
                                 }
-                                let nairaPrice = nairaInfo.data.amount
-                                btcRate = 1 / info.data.amount
+                                let nairaPrice = Number(nairaInfo.data.amount)
+                                btcRate = 1 / Number(info.data.amount)
                                 nairaRate = (250 + 116.58) / nairaPrice
                                 let processingFee = 0.000000
                                 let withdrawAmt = btcRate - processingFee

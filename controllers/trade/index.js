@@ -33,7 +33,7 @@ module.exports = {
                     return res.status(400)
                         .send(response)
                 }
-                buyPrice = Number(amount) / nairaInfo.data.amount
+                buyPrice = Number(amount) / Number(nairaInfo.data.amount)
                 console.log(buyPrice, "buy price")
 
                 accounts.sendMoney({

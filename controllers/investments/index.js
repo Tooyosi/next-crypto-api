@@ -159,7 +159,7 @@ module.exports = {
                         client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, (err, info) => {
                             console.log(`Buy Price: ${info.data.amount}`);
 
-                            btcRate = 1 / info.data.amount
+                            btcRate = 1 / Number(info.data.amount)
 
                             let processingFee = 0.000001
                             let withdrawAmt = btcRate - processingFee

@@ -773,6 +773,7 @@ module.exports = {
     redeemInvestment: ('/', async (req, res) => {
         let date = convertDate(Date.now())
         let { id, investmentId } = req.params
+        let response
         try {
             let investment = await Models.Investments.findOne({
                 where: {
@@ -964,5 +965,73 @@ module.exports = {
 
             });
         });
+    }),
+
+    makeAffiliate: ('/', async (req, res) => {
+        client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, async (err, info) => {
+            if (err) {
+                logger.error(err.toString())
+                response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+            let { id } = req.params
+            let response
+            let deduction = 100/Number(info.data.amount)
+            try {
+                let user = await Models.User.findOne({
+                    where: {
+                        user_id: id
+                    }
+                })
+
+                if (user == null || user == undefined) {
+                    response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+                    return res.status(404)
+                        .send(response)
+                }
+                if (user.isAffiliate == true) {
+                    response = new BaseResponse(failureStatus, "User Already an affiliate", failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                }
+
+                let userAccount = await Models.Account.findOne({
+                    where: {
+                        user_id: id
+                    }
+                })
+
+                if(Number(userAccount.balance) < deduction){
+                    response = new BaseResponse(failureStatus, "You dont have a sufficient balance to perform this operation", failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                }
+
+                let newBalance = Number(userAccount.balance) - deduction
+                
+                mailService.dispatch(user.email, "Next Crypto", "Affiliate Account Activated", `Congratulations !! Your affiliate membership on Next Crypto has been activated. Kindly login and start referring`, (err) => {
+                    
+                })
+
+                await createNotifications(id, `${deduction} has been deducted from your account for membership upgrade`, convertDate(Date.now()))
+                await userAccount.update({
+                    balance: newBalance
+                })
+                await user.update({
+                    isAffiliate: true
+                })
+
+                req.user.isAffiliate = true
+                response = new BaseResponse(successStatus, successStatus, successCode, {})
+                return res.status(200)
+                    .send(response)
+            } catch (error) {
+                logger.error(error.toString())
+                response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+                return res.status(400)
+                    .send(response)
+            }
+        })
     })
 }

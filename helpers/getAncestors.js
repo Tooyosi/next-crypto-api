@@ -73,7 +73,7 @@ let ancestors = async (id) => {
                         }
                         // check if registered by admin
                         await parent.update(updateObj)
-                        bonusAmount = 100/info.data.amount
+                        bonusAmount = 100/Number(info.data.amount)
                         newAncestorStage = 1
                     }
 
@@ -141,7 +141,7 @@ let ancestors = async (id) => {
                         }
                         // check if registered by admin
                         await parent.update(updateObj)
-                        bonusAmount = 375/info.data.amount
+                        bonusAmount = 375/Number(info.data.amount)
                         newAncestorStage = 2
 
                     }
@@ -169,7 +169,7 @@ let ancestors = async (id) => {
                         }
                         // check if registered by admin
                         await parent.update(updateObj)
-                        bonusAmount = 1250/info.data.amount
+                        bonusAmount = 1250/Number(info.data.amount)
                         newAncestorStage = 3
 
                     }
@@ -197,7 +197,7 @@ let ancestors = async (id) => {
                         }
                         // check if registered by admin
                         await parent.update(updateObj)
-                        bonusAmount = 3125/info.data.amount
+                        bonusAmount = 3125/Number(info.data.amount)
                         newAncestorStage = 4
 
                     }
@@ -225,7 +225,7 @@ let ancestors = async (id) => {
                         }
                         // check if registered by admin
                         await parent.update(updateObj)
-                        bonusAmount = 15625/info.data.amount
+                        bonusAmount = 15625/Number(info.data.amount)
                         newAncestorStage = 5
 
 
@@ -260,7 +260,7 @@ let ancestors = async (id) => {
 
                     await notificationCreate(parent.user_id, `New commission of ${bonusAmount.toFixed(6)} btc recieved for completing stage ${newAncestorStage}`, date)
                     if (newAncestorStage == 5) {
-                        let deduction = (100/info.data.amount)
+                        let deduction = (100/Number(info.data.amount))
                         await notificationCreate(parent.user_id, `New deduction of ${deduction.toFixed(6)} btc as re entry fee`, date)
                         newBalance = newBalance - deduction.toFixed(6)
                     }

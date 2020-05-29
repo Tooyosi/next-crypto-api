@@ -18,6 +18,7 @@ const uploadFunction = require('../../helpers/multer')
 const upload = uploadFunction('./uploads/payment')
 var uploader = upload.single('userImage')
 var client = require('../../helpers/CoinBaseClient')
+var WAValidator = require('wallet-address-validator');
 
 module.exports = {
     signup: ('/', async (req, res) => {
@@ -351,14 +352,9 @@ module.exports = {
                 limit: 10,
                 order: [['transaction_id', 'DESC']],
                 include: {
-                    model: Models.Members,
-                    as: "member",
-                    attributes: ["account_name", "account_number", "bitcoin_wallet", "bank_name"],
-                    include: {
-                        model: Models.User,
-                        as: "attributes",
-                        attributes: ["user_id", "firstname", "lastname", "email"],
-                    }
+                    model: Models.User,
+                    as: "user",
+                    attributes: ["user_id", "firstname", "lastname", "email"],
                 }
             })
             response = new BaseResponse(successStatus, successStatus, successCode, allTransactions)
@@ -592,6 +588,11 @@ module.exports = {
             response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
             return res.status(400)
                 .send(response)
+        }
+        let isValid = WAValidator.validate(bitcoinWallet, 'BTC');
+        if(isValid == false){
+            response = new BaseResponse(failureStatus, "Input a valid Bitcoin address", failureCode, {})
+            return res.status(400).send(response)
         }
         try {
             let user = await Models.Members.findOne({

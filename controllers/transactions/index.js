@@ -30,17 +30,13 @@ module.exports = {
                 offset: offset ? Number(offset) : offset,
                 limit: 10,
                 order: [['transaction_id', 'DESC']],
-                include: {
-                    model: Models.Members,
-                    as: "member",
-                    attributes: ["account_name", "account_number", "bitcoin_wallet", "bank_name"],
-                    include: {
+                 include: {
                         model: Models.User,
-                        as: "attributes",
+                        as: "user",
                         attributes: ["user_id", "firstname", "lastname", "email"],
                     }
-                }
             })
+            
             response = new BaseResponse(successStatus, successStatus, successCode, allTransactions)
             return res.status(200).send(response)
         } catch (error) {

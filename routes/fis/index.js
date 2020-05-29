@@ -27,6 +27,25 @@ const fisController = require('../../controllers/fis/index')
 */
 router.get('/', fisController.loadFis)
 
+ 
+/**
+* @swagger
+* /fis/currencies:
+*   get:
+*     summary:  Fetch all tradable currencies .
+*     tags: [Fis]
+
+*     description: This Route fetches all tradable currencies.
+*     consumes:
+*       — application/json
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/currencies', fisController.loadCurrencies)
+
 /**
 * @swagger
 * /fis/btc:
@@ -47,6 +66,10 @@ router.get('/', fisController.loadFis)
 *              btc:
 *                type: string
 *              naira:
+*                type: string
+*              walletAddress:
+*                type: string
+*              currencyId:
 *                type: string
 *
 *     responses: 

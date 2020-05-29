@@ -11,14 +11,17 @@ var Client = require('coinbase').Client;
 var client = new Client({ 'apiKey': process.env.COINBASE_API_KEY, 'apiSecret': process.env.COINBASE_API_SECRET, strictSSL: false });
 
 const investmentTimer = require("./helpers/InvestmentTimer")
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }))
+client.getAccount("ETH", function (err, accounts) {
+    // console.log(accounts)
+    
+})
+app.use(express.json({limit: "50mb",}));
+app.use(express.urlencoded({ limit: "50mb", extended: true }))
 app.use(passport.initialize())
 app.use(passport.session())
 app.use('/uploads', express.static('uploads'))
 app.use(function (req, res, next) {
-    var allowedOrigins = ['http://localhost:8080', 'https://www.nextcryptoasset.com', 'https://nextcryptoasset.com', 'http://058c6925.ngrok.io'];
+    var allowedOrigins = ['http://localhost:8081','http://localhost:8080', 'https://www.nextcryptoasset.com', 'https://nextcryptoasset.com', 'http://f33eaa0e.ngrok.io'];
     var origin = req.headers.origin;
 
     if (allowedOrigins.includes(origin)) {
@@ -38,6 +41,8 @@ const membersRoutes = require('./routes/members/index')
 const tradeRoutes = require('./routes/trade/index')
 const adminRoutes = require('./routes/admin/index')
 const notificationRoutes = require('./routes/notifications/index')
+const investmentRoutes = require('./routes/investment/index')
+const articlesRoutes = require('./routes/articles/index')
 app.use('/user', userRoutes)
 app.use('/auth', authRoutes)
 app.use('/transactions', transactionsRoutes)
@@ -46,6 +51,8 @@ app.use('/members', membersRoutes)
 app.use('/trade', tradeRoutes)
 app.use('/admin', adminRoutes)
 app.use('/notification', notificationRoutes)
+app.use('/invest', investmentRoutes)
+app.use('/articles', articlesRoutes)
 
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

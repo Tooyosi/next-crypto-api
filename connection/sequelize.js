@@ -10,9 +10,13 @@ const TransactionsModel = require("../models/transactions");
 const TransfersModel = require("../models/transfer");
 const NotificationsModel = require("../models/notifications");
 const InvestmentsModel = require("../models/investments");
+const ExternalInvestmentsModel = require("../models/external_investment");
 const CommissionsModel = require("../models/commissions");
 const TradeModel = require("../models/trade");
 const UserAddressModel = require("../models/user_wallet_fund_request");
+const ArticlesModel = require("../models/articles");
+const CurrenciesModel = require("../models/currencies");
+const FeesModel = require("../models/fees");
 
 
 
@@ -32,7 +36,10 @@ models.Investments = InvestmentsModel(sequelize, Sequelize)
 models.Commissions = CommissionsModel(sequelize, Sequelize)
 models.Trade = TradeModel(sequelize, Sequelize)
 models.UserAddress = UserAddressModel(sequelize, Sequelize)
-
+models.ExternalInvestment = ExternalInvestmentsModel(sequelize, Sequelize)
+models.Articles = ArticlesModel(sequelize, Sequelize)
+models.Currencies = CurrenciesModel(sequelize, Sequelize)
+models.Fees = FeesModel(sequelize, Sequelize)
 models.Notifications.belongsTo(models.User, {
     onDelete: 'CASCADE',
     foreignKey: 'user_id',
@@ -51,6 +58,11 @@ models.Investments.belongsTo(models.User, {
     as: "user"
 })
 
+models.Transactions.belongsTo(models.User, {
+    onDelete: 'CASCADE',
+    foreignKey: 'user_id',
+    as: "user"
+})
 models.Transfers.belongsTo(models.User, {
     onDelete: 'CASCADE',
     foreignKey: 'sender_id',

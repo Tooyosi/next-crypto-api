@@ -31,7 +31,7 @@ module.exports = {
     }),
     btcConvert: ('/', async (req, res) => {
         let { btc, naira, walletAddress, currencyId } = req.body
-        let response, currencyDetails, fee
+        let response, currencyDetails, fee, newFee, deductedRate
         if (btc.trim() == "" && naira.trim() == "") {
             response = new BaseResponse(failureStatus, validationErrorMessage, failureCode, {})
             return res.status(400).send(response)
@@ -45,12 +45,20 @@ module.exports = {
                 response = new BaseResponse(failureStatus, validationErrorMessage, failureCode, {})
                 return res.status(400).send(response)
             }
-            let currencyDetails = await findCurrency(currencyId)
+            // if fro, trade frm call
+            currencyDetails = await findCurrency(currencyId)
             let isValid = WAValidator.validate(walletAddress, currencyDetails.alias);
             if (isValid == false) {
                 response = new BaseResponse(failureStatus, `Input a valid ${currencyDetails.name} address`, failureCode, {})
                 return res.status(400).send(response)
             }
+        }
+        // if not from trade form call
+        if (currencyId && currencyId !== "") {
+            currencyDetails = await findCurrency(currencyId)
+        }
+        if (req.query.fee && req.query.fee !== "") {
+            fee = await getFee(Number(naira))
         }
         client.getBuyPrice({ 'currencyPair': currencyDetails ? `${currencyDetails.alias}-NGN` : `BTC-NGN` }, async (err, info) => {
             if (err) {
@@ -65,15 +73,15 @@ module.exports = {
             } else if (naira.trim() !== "") {
                 let amt
                 if (fee) {
-                    let feerate = Number(fee.value)/100
-                    let newFee = Number(naira) * feerate 
+                    let feerate = Number(fee.value) / 100
+                    newFee = Number(naira) * feerate
+                    deductedRate = newFee / Number(info.data.amount)
                     let newNaira = Number(naira) - newFee
                     amt = newNaira / Number(info.data.amount)
-                    
                 } else {
                     amt = Number(naira) / Number(info.data.amount)
                 }
-                let response = new BaseResponse(successStatus, successStatus, successCode, { btc: amt.toPrecision(), naira: naira, fee: fee ? fee.value : null })
+                let response = new BaseResponse(successStatus, successStatus, successCode, { btc: amt.toPrecision(), naira: naira, fee: fee ? fee.value : null, deductedFee: deductedRate ? deductedRate.toFixed(6) : null })
                 return res.status(200).send(response)
             }
         });
@@ -99,22 +107,55 @@ module.exports = {
         });
     }),
     exchangeRate: ('/', async (req, res) => {
-        client.getBuyPrice({ 'currencyPair': 'BTC-NGN' }, async (err, info) => {
-            let nairaValue, dollarValue
+        client.getExchangeRates({}, function (err, price) {
             if (err) {
                 response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
                 return res.status(400).send(response)
             }
-            nairaValue = Number(info.data.amount)
-
-            client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, (err, dollar) => {
+            
+            if (price.data && price.data.rates && price.data.rates.NGN !== "") {
+                let rate = 1/Number(price.data.rates.NGN)
+                let response = new BaseResponse(successStatus, successStatus, successCode, { exchangeRate: rate })
+                return res.status(200).send(response)
+            }
+            client.getBuyPrice({ 'currencyPair': 'BTC-NGN' }, async (err, info) => {
+                let nairaValue, dollarValue
                 if (err) {
                     response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
                     return res.status(400).send(response)
                 }
-                dollarValue = Number(dollar.data.amount)
-                let exRate = dollarValue / nairaValue
-                let response = new BaseResponse(successStatus, successStatus, successCode, { exchangeRate: exRate })
+                nairaValue = Number(info.data.amount)
+
+                client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, (err, dollar) => {
+                    if (err) {
+                        response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                        return res.status(400).send(response)
+                    }
+                    dollarValue = Number(dollar.data.amount)
+                    let exRate = dollarValue / nairaValue
+                    let response = new BaseResponse(successStatus, successStatus, successCode, { exchangeRate: exRate })
+                    return res.status(200).send(response)
+                })
+            });
+        });
+
+    }),
+    getNairaRates: ('/', async(req, res)=>{
+        client.getBuyPrice({ 'currencyPair': 'BTC-NGN' }, async (err, btc) => {
+            let btcValue, ethValue, response
+            if (err) {
+                response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                return res.status(400).send(response)
+            }
+            btcValue = Number(btc.data.amount)
+
+            client.getBuyPrice({ 'currencyPair': 'ETH-NGN' }, (err, eth) => {
+                if (err) {
+                    response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                    return res.status(400).send(response)
+                }
+                ethValue = Number(eth.data.amount)
+                response = new BaseResponse(successStatus, successStatus, successCode, { btcValue, ethValue })
                 return res.status(200).send(response)
             })
         });

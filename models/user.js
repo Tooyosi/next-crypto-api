@@ -34,6 +34,31 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       comment: "null"
     },
+    'address': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
+    'photograph_url': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
+    'passport_url': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
+    'utility_bill_url': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
+    'isKycUpdated': {
+      type: DataTypes.INTEGER(1),
+      allowNull: true,
+      comment: "null"
+    },
     'password': {
       type: DataTypes.STRING(255),
       allowNull: false,

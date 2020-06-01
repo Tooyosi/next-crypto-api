@@ -29,11 +29,11 @@ module.exports = {
         }
     },
     isAffiliate: async (req, res, next) => {
-        if(!req.user.isAffiliate){
+        if(req.user.isAffiliate || req.user.isAdmin){
+            next()
+        }else{
             let response = new BaseResponse(false, 'Invalid Operation, You need to be an affiliate member to perform this operation', failureCode, {})
             res.status(401).send(response);
-        }else{
-            next()
         }
     },
     refresh: async (req, res, next) => {

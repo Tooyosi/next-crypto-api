@@ -241,6 +241,8 @@ router.get('/:id/account',authenticate, protected, refresh ,isLoggedUser,userCon
 *              bitcoinWallet:
 *                type: string
 *                required: true
+*              ethWallet:
+*                type: string
 *     responses: 
 *       200:
 *         description: Receive back flavor and flavor Id.
@@ -381,6 +383,8 @@ router.get('/search/:searchTerm',authenticate,protected, refresh,  userControlle
 *              status:
 *                type: string
 *              reference:
+*                type: string
+*              fee:
 *                type: string
 *     responses: 
 *       200:

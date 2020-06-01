@@ -1,8 +1,8 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('transactions', {
-    'transaction_id': {
+  return sequelize.define('courses', {
+    'course_id': {
       type: DataTypes.INTEGER(11),
       allowNull: false,
       primaryKey: true,
@@ -10,51 +10,57 @@ module.exports = function(sequelize, DataTypes) {
       comment: "null",
       autoIncrement: true
     },
-    'transaction_type': {
+    'title': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'user_id': {
-      type: DataTypes.INTEGER(11),
-      allowNull: false,
-      comment: "null",
-      references: {
-        model: 'user',
-        key: 'user_id'
-      }
-    },
-    'date': {
-      type: DataTypes.DATE,
-      allowNull: false,
-      comment: "null"
-    },
-    'amount': {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      comment: "null"
-    },
-    'fee': {
+    'description': {
       type: DataTypes.STRING(255),
       allowNull: true,
       comment: "null"
     },
-    'transaction_status': {
+    'member_stage': {
+      type: DataTypes.INTEGER(11),
+      allowNull: false,
+      comment: "null"
+    },
+    'video_url': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'currency': {
+    'video_asset_id': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'transaction_reference': {
+    'public_id': {
       type: DataTypes.STRING(255),
       allowNull: false,
+      comment: "null"
+    },
+    'video_id': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
+    },
+    'thumbnail_url': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
+    },
+    'date_created': {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+      comment: "null"
+    },
+    'date_updated': {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
       comment: "null"
     }
   }, {
-    tableName: 'transactions'
+    tableName: 'courses'
   });
 };

@@ -30,13 +30,13 @@ module.exports = {
                 offset: offset ? Number(offset) : offset,
                 limit: 10,
                 order: [['transaction_id', 'DESC']],
-                 include: {
-                        model: Models.User,
-                        as: "user",
-                        attributes: ["user_id", "firstname", "lastname", "email"],
-                    }
+                include: {
+                    model: Models.User,
+                    as: "user",
+                    attributes: ["user_id", "firstname", "lastname", "email"],
+                }
             })
-            
+
             response = new BaseResponse(successStatus, successStatus, successCode, allTransactions)
             return res.status(200).send(response)
         } catch (error) {
@@ -67,7 +67,7 @@ module.exports = {
                     where: {
                         user_id: transaction.user_id
                     },
-                    attributes: ["account_name", "account_number", "bitcoin_wallet", "bank_name", "bank_code", "account_id"]
+                    attributes: ["account_name", "account_number", "bitcoin_wallet", "bank_name", "bank_code", "account_id", "eth_wallet"]
                 })
 
                 let memberAccount = await Models.Account.findOne({
@@ -118,7 +118,7 @@ module.exports = {
                         //     newAmt = Number(transaction.amount) * 356
                         // }
 
-                        
+
                         let transferReciept = await apicall.makeCall("POST", `https://api.paystack.co/transferrecipient`, {
                             type: "nuban",
                             name: memberDetails.account_name,
@@ -170,60 +170,87 @@ module.exports = {
                                 .send(response)
                         }
                         let buyPrice, btcRate, nairaRate
-                        client.getBuyPrice({ 'currencyPair': 'BTC-NGN' }, (err, nairaInfo) => {
+
+                        client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, (err, info) => {
                             if (err) {
                                 logger.error(err.toString())
                                 response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
                                 return res.status(400)
                                     .send(response)
                             }
-                            client.getBuyPrice({ 'currencyPair': 'BTC-USD' }, (err, info) => {
+
+                            buyPrice = (Number(transaction.amount))
+
+                            accounts.sendMoney({
+                                to: memberDetails.bitcoin_wallet,
+                                amount: buyPrice.toFixed(6),
+                                currency: 'BTC'
+                            }, async function (err, tx) {
                                 if (err) {
                                     logger.error(err.toString())
                                     response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
                                     return res.status(400)
                                         .send(response)
+                                } else {
+
+                                    await transaction.update({
+                                        transaction_status: "successful"
+                                    })
+                                    response = new BaseResponse(successStatus, successStatus, successCode, "Successful")
+                                    return res.status(200)
+                                        .send(response)
                                 }
-                                let nairaPrice = Number(nairaInfo.data.amount)
-                                btcRate = 1 / Number(info.data.amount)
-                                nairaRate = (250 + 116.58) / nairaPrice
-                                let processingFee = 0.000000
-                                let withdrawAmt = btcRate - processingFee
-                                buyPrice = (Number(transaction.amount)) - nairaRate
-                                
-                                accounts.createAddress(null, function (err, addr) {
-                                    if (err) {
-                                        logger.error(err.toString())
-                                        response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
-                                        return res.status(400)
-                                            .send(response)
-                                    }
-                                    accounts.sendMoney({
-                                        to: memberDetails.bitcoin_wallet,
-                                        amount: buyPrice.toFixed(7),
-                                        currency: 'BTC'
-                                    }, async function (err, tx) {
-                                        if (err) {
-                                            logger.error(err.toString())
-                                            response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
-                                            return res.status(400)
-                                                .send(response)
-                                        } else {
 
-                                            await transaction.update({
-                                                transaction_status: "successful"
-                                            })
-                                            response = new BaseResponse(successStatus, successStatus, successCode, "Successful")
-                                            return res.status(200)
-                                                .send(response)
-                                        }
-
-                                    });
-                                });
                             });
-                        })
+                        });
 
                     });
+                } else if (transaction.currency == "Ethereum" && transaction.transaction_type == "Withdrawal" && transaction.transaction_status == "pending") {
+                    if (memberDetails.eth_wallet == null) {
+                        response = new BaseResponse(failureStatus, "Incomplete User Account Information: No ETH Wallet", failureCode, {})
+                        return res.status(400)
+                            .send(response)
+                    }
+                    client.getAccount("ETH", function (err, accounts) {
+                        // accounts.forEach(function(acct) {
+                        if (err) {
+                            logger.error(err.toString())
+                            response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                            return res.status(400)
+                                .send(response)
+                        }
+                        if (Number(accounts.balance.amount) < 0.00001) {
+                            response = new BaseResponse(failureStatus, "Account Low, Kindly Top Up Ethereum Wallet", failureCode, {})
+                            return res.status(400)
+                                .send(response)
+                        }
+                        let buyPrice, btcRate, nairaRate
+
+                        buyPrice = (Number(transaction.amount))
+
+                        accounts.sendMoney({
+                            to: memberDetails.eth_wallet,
+                            amount: buyPrice.toFixed(6),
+                            currency: 'ETH'
+                        }, async function (err, tx) {
+                            if (err) {
+                                logger.error(err.toString())
+                                response = new BaseResponse(failureStatus, err.toString(), failureCode, {})
+                                return res.status(400)
+                                    .send(response)
+                            } else {
+
+                                await transaction.update({
+                                    transaction_status: "successful"
+                                })
+                                response = new BaseResponse(successStatus, successStatus, successCode, "Successful")
+                                return res.status(200)
+                                    .send(response)
+                            }
+
+                        });
+                    });
+
                 } else {
                     response = new BaseResponse(failureStatus, "Invalid Action", failureCode, {})
                     return res.status(400)

@@ -17,6 +17,7 @@ const UserAddressModel = require("../models/user_wallet_fund_request");
 const ArticlesModel = require("../models/articles");
 const CurrenciesModel = require("../models/currencies");
 const FeesModel = require("../models/fees");
+const CoursesModel = require("../models/courses");
 
 
 
@@ -40,6 +41,7 @@ models.ExternalInvestment = ExternalInvestmentsModel(sequelize, Sequelize)
 models.Articles = ArticlesModel(sequelize, Sequelize)
 models.Currencies = CurrenciesModel(sequelize, Sequelize)
 models.Fees = FeesModel(sequelize, Sequelize)
+models.Courses = CoursesModel(sequelize, Sequelize)
 models.Notifications.belongsTo(models.User, {
     onDelete: 'CASCADE',
     foreignKey: 'user_id',

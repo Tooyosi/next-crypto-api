@@ -99,6 +99,25 @@ router.post('/btc', fisController.btcConvert)
 */
 router.get('/exchange-rate', fisController.exchangeRate)
 
+
+/**
+* @swagger
+* /fis/rates:
+*   get:
+*     summary:  Gets naira rates of tradable curriencies on th platform .
+*     tags: [Fis]
+
+*     description: This Gets naira rates of tradable curriencies on th platform.
+*     consumes:
+*       — application/json
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.get('/rates', fisController.getNairaRates)
+
 /**
 * @swagger
 * /fis/wallet:

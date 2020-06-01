@@ -34,6 +34,7 @@ module.exports = {
                 req.token = jwt.sign({
                     id: req.user.user_id,
                     isAffiliate: req.user.isAffiliate,
+                    isKycUpdated: req.user.isKycUpdated?true:false ,
                     isAdmin: req.user.user_type.dataValues.user_type == "admin" ? true : false
                 }, process.env.SESSION_SECRET, {
                     expiresIn: '3 hours'
@@ -46,6 +47,11 @@ module.exports = {
                     phone: req.user.phone,
                     country: req.user.country,
                     isAffiliate: req.user.isAffiliate,
+                    photograph_url: req.user.photograph_url,
+                    isKycUpdated: req.user.isKycUpdated,
+                    address: req.user.address,
+                    utility_bill_url: req.user.utility_bill_url,
+                    passport_url: req.user.passport_url,
                     accountBalance: req.user.balance.balance,
                     isAdmin: req.user.user_type.dataValues.user_type == "admin" ? true : false,
                 }

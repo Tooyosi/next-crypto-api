@@ -13,6 +13,7 @@ const uuid = require('uuid').v4
 module.exports = {
     notify: ('/', async (req, res) => {
         let { type, data: { address }, additional_data: { amount: { amount, currency } }, } = req.body
+        let incomingCurrency
         switch (type) {
             case "wallet:addresses:new-payment":
                 let account = await Models.UserAddress.findOne({
@@ -24,41 +25,51 @@ module.exports = {
                 if (account !== null && account !== undefined) {
                     let userAccount
                     if (currency == "BTC") {
+                        incomingCurrency = "Bitcoin"
                         userAccount = await Models.Account.findOne({
                             where: {
                                 user_id: account.user_id
                             }
                         })
+                    } else if (currency == "ETH") {
+                        incomingCurrency = "Ethereum"
+
+                        userAccount = await Models.EthAccount.findOne({
+                            where: {
+                                user_id: account.user_id
+                            }
+                        })
                     }
-                    
+                    if (userAccount !== null && userAccount !== undefined) {
                         let newBalance = Number(userAccount.balance) + Number(amount)
                         await userAccount.update({
                             balance: newBalance,
                             date_updated: convertDate(Date.now())
                         })
-                    let user = await Models.User.findOne({
-                        where: {
-                            user_id: account.user_id
+                        let user = await Models.User.findOne({
+                            where: {
+                                user_id: account.user_id
+                            }
+                        })
+
+                        let transObj = {
+                            amount: Number(amount),
+                            transaction_status: "success",
+                            date: convertDate(Date.now()),
+                            user_id: account.user_id,
+                            transaction_type: "Deposit",
+                            currency: incomingCurrency,
+                            transaction_reference: uuid()
                         }
-                    })
 
-                    let transObj = {
-                        amount: Number(amount),
-                        transaction_status: "success",
-                        date: convertDate(Date.now()),
-                        user_id: account.user_id,
-                        transaction_type:"Deposit",
-                        currency: currency == "BTC"? "Bitcoin" : "",
-                        transaction_reference: uuid()
+                        await Models.Transactions.create(transObj)
+                        mailService.dispatch(user.dataValues.email, "Next Crypto", `Recieved ${amount} ${currency}`, `You have just recieved ${amount}${currency} and it has been added to your balance`, (err) => {
+
+
+                        })
+
+                        await createNotifications(account.user_id, `Recieved ${amount} ${currency} from an external wallet. New balance is ${newBalance}`, convertDate(Date.now()))
                     }
-
-                    await Models.Transactions.create(transObj)
-                    mailService.dispatch(user.dataValues.email, "Next Crypto", `Recieved ${amount} ${currency}`, `You have just recieved ${amount}${currency} and it has been added to your balance`, (err) => {
-
-
-                    })
-
-                    await createNotifications(account.user_id, `Recieved ${amount} ${currency} from an external wallet. New balance is ${newBalance}`, convertDate(Date.now()))
                 }
                 break;
         }

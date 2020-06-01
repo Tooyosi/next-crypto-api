@@ -53,6 +53,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true,
       comment: "null"
     },
+    'eth_wallet': {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: "null"
+    },
     'bank_name': {
       type: DataTypes.STRING(255),
       allowNull: true,

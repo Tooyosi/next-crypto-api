@@ -13,9 +13,12 @@ let mailService = new SendMail("Gmail");
 module.exports = {
     getAllUsers: ('/', async (req, res) => {
         let response;
-        let { searchTerm, offset } = req.query
+        let { searchTerm, offset, isKycUpdated } = req.query
         let whereObj = {
             user_type_id: 1
+        }
+        if (isKycUpdated && isKycUpdated !== null && isKycUpdated !== "") {
+            whereObj.isKycUpdated = false || null 
         }
         if (searchTerm !== "" && searchTerm !== null && searchTerm !== undefined) {
             whereObj = {
@@ -46,7 +49,9 @@ module.exports = {
         try {
             let allUsers = await Models.User.findAndCountAll({
                 where: whereObj,
-                attributes: ["user_id", "firstname", "lastname", "email", "phone", "date_created", "payment_proof", "isApproved"],
+                // attributes: ["user_id", "firstname", "lastname", "email", "phone", "date_created", "payment_proof", "isApproved"],
+                attributes: { exclude: ['date_created', 'access_token', 'refresh_token', 'payment_mode', 'payment_proof', 'payment_reference', 'reset_password_token', 'reset_password_expiry', 'password', "transaction_pin", "transaction_pin"] },
+
                 offset: offset ? Number(offset) : offset,
                 limit: 10,
                 order: [['user_id', 'DESC']],
@@ -82,15 +87,22 @@ module.exports = {
                 return res.status(404)
                     .send(response)
             }
-            await user.update({
-                isActivated: isApproved,
-                isApproved: isApproved
-            })
-            if (action == "approve") {
-                mailService.dispatch(user.dataValues.email, "Next Crypto", "Account Approved", "Congratulations, Your Next Crypto Account has been approved and activated. Kindly proceed to login", (err) => {
-
+            if (req.query.isKycUpdated && req.query.isKycUpdated !== null && req.query.isKycUpdated !== "") {
+                await user.update({
+                    isKycUpdated: isApproved
                 })
+            } else {
+                await user.update({
+                    isActivated: isApproved,
+                    isApproved: isApproved
+                })
+                if (action == "approve") {
+                    mailService.dispatch(user.dataValues.email, "Next Crypto", "Account Approved", "Congratulations, Your Next Crypto Account has been approved and activated. Kindly proceed to login", (err) => {
+
+                    })
+                }
             }
+
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200)
                 .send(response)

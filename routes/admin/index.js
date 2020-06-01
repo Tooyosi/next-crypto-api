@@ -36,6 +36,10 @@ const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 *         name: searchTerm  
 *         schema:
 *           type: string
+*       - in: query
+*         name: isKycUpdated  
+*         schema:
+*           type: string
 *     responses: 
 *       200:
 *         description: Success.
@@ -68,6 +72,10 @@ router.get('/approve',authenticate, protected, refresh,isAdmin, adminController.
 *           type: integer
 *           minimum: 1
 *           description: The user id
+*       - in: query
+*         name: isKycUpdated  
+*         schema:
+*           type: string
 *       - in: body
 *         name: body   
 *         required: true

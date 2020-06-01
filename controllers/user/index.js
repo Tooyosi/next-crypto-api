@@ -16,9 +16,13 @@ let createNotifications = require('../../helpers/createNotification');
 const moment = require('moment-timezone');
 const uploadFunction = require('../../helpers/multer')
 const upload = uploadFunction('./uploads/payment')
+const upload2 = uploadFunction('./uploads/kyc')
 var uploader = upload.single('userImage')
+var multiUploader = upload2.fields([{ name: 'passport' }, { name: 'photo' }, { name: 'utility' }])
 var client = require('../../helpers/CoinBaseClient')
 var WAValidator = require('wallet-address-validator');
+const getCurrencyById = require('../../helpers/getCurrencyById');
+const fs = require('fs')
 
 module.exports = {
     signup: ('/', async (req, res) => {
@@ -240,7 +244,7 @@ module.exports = {
 
     postTransactions: ('/', async (req, res) => {
         let { id } = req.params;
-        let { type, amount, currency, status, reference } = req.body
+        let { type, amount, currency, status, reference, fee } = req.body
         let newReference
         if (!reference || reference.trim() == "") {
             newReference = uuid()
@@ -248,11 +252,13 @@ module.exports = {
             newReference = reference
         }
         let response;
+        let amt = Number(amount)
         let transObj = {
-            amount: Number(amount),
+            amount: amt.toFixed(6),
             transaction_status: status !== "" ? status : "pending",
             date: convertDate(Date.now()),
             user_id: id,
+            fee: fee ? fee : null,
             transaction_reference: newReference
         }
         // if (Number(amount) < 1) {
@@ -275,18 +281,24 @@ module.exports = {
                     transObj.transaction_type = "Deposit"
                     break
             }
+            if (currency == "naira") {
+                transObj.currency = "Naira"
+            } else {
+                let newCurrency = await getCurrencyById(currency)
+                transObj.currency = newCurrency.name
 
-            switch (currency) {
-                case 1:
-                    transObj.currency = "Naira"
-                    break;
-                case 2:
-                    transObj.currency = "Bitcoin"
-                    break
-                case 3:
-                    transObj.currency = "TAC"
-                    break
             }
+            // switch (currency) {
+            //     case 1:
+            //         transObj.currency = "Naira"
+            //         break;
+            //     case 2:
+            //         transObj.currency = "Bitcoin"
+            //         break
+            //     case 3:
+            //         transObj.currency = "TAC"
+            //         break
+            // }
             let userAccount = await Models.Account.findOne({
                 where: {
                     user_id: id
@@ -465,58 +477,93 @@ module.exports = {
     }),
 
     editUser: ('/', async (req, res) => {
-        let { id } = req.params
         let response
-        let { firstname, lastname, phone, country } = req.body
-        let updateObj = {
-            date_updated: convertDate(Date.now())
-        }
-        if (firstname.trim() == "" && lastname.trim() == "" && phone.trim() == "" && country.trim() == "") {
-            response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
-        if (phone && phone.length !== 11) {
-            response = new BaseResponse(failureStatus, "Invalid phone number", failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
-        if (firstname && firstname.trim() !== "") {
-            updateObj.firstname = firstname
-        }
-        if (lastname && lastname.trim() !== "") {
-            updateObj.lastname = lastname
-        }
-        if (country && country.trim() !== "") {
-            updateObj.country = country
-        }
-        if (phone && phone.length == 11) {
-            updateObj.phone = phone
-        }
-        try {
-            let user = await Models.User.findOne({
-                where: {
-                    user_id: id
-                },
-                attributes: ["firstname", "lastname", "phone", "user_id", "country"]
-            })
-
-            if (user == null || user == undefined) {
-                response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+        multiUploader(req, res, async (err) => {
+            if (err instanceof multer.MulterError) {
+                logger.error(err.message ? err.message : err.toString())
+                response = new BaseResponse(failureStatus, err.message ? err.message : err.toString(), failureCode, {})
                 return res.status(400)
                     .send(response)
-            }
+            } else if (err) {
+                logger.error(err.toString())
+                response = new BaseResponse(failureStatus, err.message ? err.message : err.toString(), failureCode, {})
+                return res.status(400)
+                    .send(response)
+            } else {
 
-            await user.update(updateObj)
-            response = new BaseResponse(successStatus, successStatus, successCode, user)
-            return res.status(200)
-                .send(response)
-        } catch (error) {
-            logger.error(error.toString())
-            response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
-            return res.status(400)
-                .send(response)
-        }
+                let { id } = req.params
+                let { firstname, lastname, phone, country, address } = req.body
+                let updateObj = {
+                    date_updated: convertDate(Date.now())
+                }
+                if (firstname.trim() == "" && lastname.trim() == "" && phone.trim() == "" && country.trim() == "") {
+                    response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                }
+
+                if (phone && phone.length !== 11) {
+                    response = new BaseResponse(failureStatus, "Invalid phone number", failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                }
+                if (firstname && firstname.trim() !== "") {
+                    updateObj.firstname = firstname
+                }
+                if (lastname && lastname.trim() !== "") {
+                    updateObj.lastname = lastname
+                }
+                if (country && country.trim() !== "") {
+                    updateObj.country = country
+                }
+                if (address && address.trim() !== "") {
+                    updateObj.address = address
+                }
+                if (phone && phone.length == 11) {
+                    updateObj.phone = phone
+                }
+                try {
+                    let user = await Models.User.findOne({
+                        where: {
+                            user_id: id
+                        },
+                        attributes: { exclude: ['date_created', 'date_updated', 'access_token', 'refresh_token', 'payment_mode', 'payment_proof', 'payment_reference', 'reset_password_token', 'reset_password_expiry', 'password', "transaction_pin", "transaction_pin"] },
+                    })
+
+                    if (user == null || user == undefined) {
+                        response = new BaseResponse(failureStatus, "User not found", failureCode, {})
+                        return res.status(400)
+                            .send(response)
+                    }
+                    if (req.files && req.files.passport) {
+                        if (user.passport_url !== null) {
+                            fs.unlinkSync(`./${user.passport_url}`)
+                        }
+                        updateObj.passport_url = req.files.passport[0].path
+                    }
+                    if (req.files && req.files.photo) {
+                        if (user.photograph_url !== null) {
+                            fs.unlinkSync(`./${user.photograph_url}`)
+                        }
+                        updateObj.photograph_url = req.files.photo[0].path
+                    } if (req.files && req.files.utility) {
+                        if (user.utility_bill_url !== null) {
+                            fs.unlinkSync(`./${user.utility_bill_url}`)
+                        }
+                        updateObj.utility_bill_url = req.files.utility[0].path
+                    }
+                    await user.update(updateObj)
+                    response = new BaseResponse(successStatus, successStatus, successCode, user)
+                    return res.status(200)
+                        .send(response)
+                } catch (error) {
+                    logger.error(error.toString())
+                    response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
+                    return res.status(400)
+                        .send(response)
+                }
+            }
+        })
     }),
     passwordChange: ('/', async (req, res) => {
         let { id } = req.params
@@ -568,7 +615,7 @@ module.exports = {
                 where: {
                     user_id: id
                 },
-                attributes: ["bank_code", "account_name", "account_number", "bitcoin_wallet", "bank_name"]
+                attributes: ["bank_code", "account_name", "account_number", "bitcoin_wallet", "bank_name", "eth_wallet"]
             })
             response = new BaseResponse(successStatus, successStatus, successCode, user)
             return res.status(200)
@@ -582,7 +629,7 @@ module.exports = {
     }),
     editAccount: ('/', async (req, res) => {
         let { id } = req.params
-        let { accountName, accountNumber, bankName, bankCode, bitcoinWallet } = req.body;
+        let { accountName, accountNumber, bankName, bankCode, bitcoinWallet, ethWallet } = req.body;
         let response
         if (accountName.trim() == "" || accountNumber.trim() == "" || accountNumber.length != 10 || bankName.trim() == "" || bankCode.trim() == "" || bitcoinWallet.trim() == "") {
             response = new BaseResponse(failureStatus, "One or more parameters are invalid", failureCode, {})
@@ -590,9 +637,25 @@ module.exports = {
                 .send(response)
         }
         let isValid = WAValidator.validate(bitcoinWallet, 'BTC');
-        if(isValid == false){
+        if (isValid == false) {
             response = new BaseResponse(failureStatus, "Input a valid Bitcoin address", failureCode, {})
             return res.status(400).send(response)
+        }
+        let updateObj = {
+            account_name: accountName,
+            account_number: accountNumber,
+            bitcoin_wallet: bitcoinWallet,
+            bank_name: bankName,
+            bank_code: bankCode
+        }
+        if (ethWallet && ethWallet.trim() !== "") {
+
+            let isEthValid = WAValidator.validate(ethWallet, 'ETH');
+            if (isEthValid == false) {
+                response = new BaseResponse(failureStatus, "Input a valid Etherium address", failureCode, {})
+                return res.status(400).send(response)
+            }
+            updateObj.eth_wallet = ethWallet
         }
         try {
             let user = await Models.Members.findOne({
@@ -606,13 +669,7 @@ module.exports = {
                 return res.status(400)
                     .send(response)
             }
-            await user.update({
-                account_name: accountName,
-                account_number: accountNumber,
-                bitcoin_wallet: bitcoinWallet,
-                bank_name: bankName,
-                bank_code: bankCode
-            })
+            await user.update(updateObj)
             response = new BaseResponse(successStatus, successStatus, successCode, {})
             return res.status(200)
                 .send(response)
@@ -894,7 +951,7 @@ module.exports = {
             let allInvestments = await Models.Investments.findAndCountAll({
                 where: whereObj,
                 offset: offset ? Number(offset) : offset,
-                limit: 10, 
+                limit: 10,
                 include: {
                     model: Models.User,
                     as: "user",
@@ -921,13 +978,19 @@ module.exports = {
                 },
                 attributes: ["balance"]
             })
+            let userEthAccount = await Models.EthAccount.findOne({
+                where: {
+                    user_id: id
+                },
+                attributes: ["balance"]
+            })
             if (userAccount == null || userAccount == undefined) {
                 response = new BaseResponse(failureStatus, "Account Not found", failureCode, {})
                 return res.status(400)
                     .send(response)
             }
 
-            response = new BaseResponse(successStatus, successStatus, successCode, userAccount)
+            response = new BaseResponse(successStatus, successStatus, successCode, { balance: userAccount.balance, ethBalance: userEthAccount ? userEthAccount.balance : null })
             return res.status(200).send(response)
         } catch (error) {
             logger.error(error.toString())
@@ -983,7 +1046,7 @@ module.exports = {
             }
             let { id } = req.params
             let response
-            let deduction = 100/Number(info.data.amount)
+            let deduction = 100 / Number(info.data.amount)
             try {
                 let user = await Models.User.findOne({
                     where: {
@@ -1008,16 +1071,16 @@ module.exports = {
                     }
                 })
 
-                if(Number(userAccount.balance) < Number(deduction)){
+                if (Number(userAccount.balance) < Number(deduction)) {
                     response = new BaseResponse(failureStatus, "You dont have a sufficient balance to perform this operation", failureCode, {})
                     return res.status(400)
                         .send(response)
                 }
 
                 let newBalance = Number(userAccount.balance) - Number(deduction)
-                
+
                 mailService.dispatch(user.email, "Next Crypto", "Affiliate Account Activated", `Congratulations !! Your affiliate membership on Next Crypto has been activated. Kindly login and start referring`, (err) => {
-                    
+
                 })
 
                 await createNotifications(id, `${deduction} has been deducted from your account for membership upgrade`, convertDate(Date.now()))

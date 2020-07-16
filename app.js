@@ -26,7 +26,7 @@ app.use(passport.initialize())
 app.use(passport.session())
 app.use('/uploads', express.static('uploads'))
 app.use(function (req, res, next) {
-    var allowedOrigins = ['http://localhost:8081','http://localhost:8080', 'https://www.nextcryptoasset.com', 'https://nextcryptoasset.com', 'http://a090535c5a0d.ngrok.io'];
+    var allowedOrigins = ['http://localhost:8081','http://localhost:8080', 'https://www.nextcryptoassets.com', 'https://nextcryptoasset.com', 'http://a090535c5a0d.ngrok.io'];
     var origin = req.headers.origin;
 
     if (allowedOrigins.includes(origin)) {

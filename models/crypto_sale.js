@@ -1,8 +1,8 @@
 /* jshint indent: 2 */
 
 module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('trade', {
-    'id': {
+  return sequelize.define('crypto_sale', {
+    'sale_id': {
       type: DataTypes.INTEGER(11),
       allowNull: false,
       primaryKey: true,
@@ -10,17 +10,37 @@ module.exports = function(sequelize, DataTypes) {
       comment: "null",
       autoIncrement: true
     },
-    'currency': {
+    'payment_reference': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'email': {
+    'account_number': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'wallet': {
+    'account_name': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
+    },
+    'bank_name': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
+    },
+    'bank_code': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
+    },
+    'proof_of_payment': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
+    },
+    'status': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
@@ -30,22 +50,27 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       comment: "null"
     },
-    'charges': {
+    'crypto_value': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'payment_ref': {
+    'currency': {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
     },
-    'date': {
+    'date_created': {
       type: DataTypes.DATE,
       allowNull: false,
       comment: "null"
+    },
+    'date_approved': {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: "null"
     }
   }, {
-    tableName: 'trade'
+    tableName: 'crypto_sale'
   });
 };

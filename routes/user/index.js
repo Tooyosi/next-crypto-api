@@ -149,8 +149,11 @@ router.put('/:id',authenticate, protected, refresh ,isLoggedUser,userController.
 *            type: object
 *            required:
 *              -password
+*              -oldPassword
 *            properties:
 *              password:
+*                type: string
+*              oldPassword:
 *                type: string
 *     responses: 
 *       200:

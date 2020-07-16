@@ -104,6 +104,6 @@ router.get('/:id/referrals',authenticate, protected,refresh, isLoggedUser, isAff
 *       400:
 *         description: Bad Request.
 */
-router.get('/:id',authenticate, protected,refresh,isLoggedUser, isAffiliate, membersController.fetchMemberDetails)
+router.get('/:id',authenticate, protected,refresh,isLoggedUser, membersController.fetchMemberDetails)
 
 module.exports = router

@@ -48,7 +48,6 @@ module.exports = {
                 return res.status(404).send(response)
             }        
         } catch (error) {
-            console.log(error)
             logger.error(error.toString())
             response = new BaseResponse(failureStatus, error.toString(), failureCode, {})
             return res.status(400)

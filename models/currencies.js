@@ -19,6 +19,16 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: false,
       comment: "null"
+    },
+    'buy_rate': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
+    },
+    'sell_rate': {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: "null"
     }
   }, {
     tableName: 'currencies'

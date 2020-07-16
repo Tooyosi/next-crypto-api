@@ -50,7 +50,7 @@ module.exports = {
             let allUsers = await Models.User.findAndCountAll({
                 where: whereObj,
                 // attributes: ["user_id", "firstname", "lastname", "email", "phone", "date_created", "payment_proof", "isApproved"],
-                attributes: { exclude: ['date_created', 'access_token', 'refresh_token', 'payment_mode', 'payment_proof', 'payment_reference', 'reset_password_token', 'reset_password_expiry', 'password', "transaction_pin", "transaction_pin"] },
+                attributes: { exclude: ['access_token', 'refresh_token', 'payment_mode', 'payment_proof', 'payment_reference', 'reset_password_token', 'reset_password_expiry', 'password', "transaction_pin", "transaction_pin"] },
 
                 offset: offset ? Number(offset) : offset,
                 limit: 10,

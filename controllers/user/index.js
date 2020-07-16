@@ -22,7 +22,7 @@ var multiUploader = upload2.fields([{ name: 'passport' }, { name: 'photo' }, { n
 var client = require('../../helpers/CoinBaseClient')
 var WAValidator = require('wallet-address-validator');
 const getCurrencyById = require('../../helpers/getCurrencyById');
-const fs = require('fs')
+const fs = require('fs');
 
 module.exports = {
     signup: ('/', async (req, res) => {
@@ -64,14 +64,15 @@ module.exports = {
 
                 try {
                     let uplineMember
-                    if (uplineReferralCode && uplineReferralCode.trim() !== "") {
+                    // if (uplineReferralCode && uplineReferralCode.trim() !== "") {
                         uplineMember = await Models.Members.findOne({
                             where: {
-                                referral_id: uplineReferralCode
+                                referral_id: uplineReferralCode && uplineReferralCode.trim() !== "" ? uplineReferralCode : "godswillnmekini@gmail.com"
                             }
                         })
 
-                    }
+                    // }
+                    
                     if (signupOption == "1" && uplineMember !== null && uplineMember !== undefined) {
                         memberUplineId = { member_id: uplineMember.dataValues.member_id, user_id: uplineMember.dataValues.user_id }
                         let allDownlines = await Models.Members.findAll({
@@ -84,6 +85,17 @@ module.exports = {
                             let incompleteDownlines = await getIncompleteDownlines(uplineMember.dataValues.user_id)
                             memberUplineId = incompleteDownlines[0]
                         }
+
+                        let usr = await Models.User.findOne({
+                            where: {
+                                user_id: uplineMember.dataValues.user_id
+                            }
+                        })
+                        if (Boolean(usr.isActivated) == false || Boolean(usr.isAffiliate) == false) {
+                            memberUplineId = null
+                        }
+                        // return console.log(Boolean(usr.isActivated), Boolean(usr.isAffiliate))
+
                     }
 
                     let isApproved = false
@@ -130,8 +142,9 @@ module.exports = {
                             upline_user_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.user_id : null,
                             parentId: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
                             current_stage: 1,
-                            referral_id: `${newUser.dataValues.user_id}${uuid()}`,
-                            sponsor_id: uplineMember ? uplineMember.user_id : null,
+                            // referral_id: `${newUser.dataValues.user_id}${uuid()}`,
+                            referral_id: `${email}`,
+                            sponsor_id: uplineMember && memberUplineId !== null && memberUplineId !== undefined ? uplineMember.user_id : null,
                             account_id: newAccount.account_id,
                             parentMember_id: memberUplineId !== null && memberUplineId !== undefined ? memberUplineId.member_id : null,
                         })
@@ -567,8 +580,8 @@ module.exports = {
     }),
     passwordChange: ('/', async (req, res) => {
         let { id } = req.params
-        let { password } = req.body
-        if (password.trim() == "") {
+        let { password, oldPassword } = req.body
+        if (password.trim() == "" || oldPassword.trim() == "") {
             response = new BaseResponse(failureStatus, "Password is required", failureCode, {})
             return res.status(400)
                 .send(response)
@@ -576,7 +589,9 @@ module.exports = {
         try {
             let user = await Models.User.findOne({
                 where: {
-                    user_id: id
+                    user_id: id,
+                    password: bin2hashData(oldPassword, process.env.PASSWORD_HASH),
+
                 }
             })
             if (user == null || user == undefined) {

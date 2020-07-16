@@ -10,14 +10,19 @@ var client = require('../../helpers/CoinBaseClient')
 module.exports = {
     post: ('/', async (req, res) => {
         let response
-        let { name, phone, username, address, city, state, country, nationality, acctName, bankName,email, acctNumber, acctType, amount, duration, paymentReference } = req.body
-        if (name.trim() == "" || phone.trim() == "" || username.trim()==""|| address.trim() == "" || city.trim() == "" || state.trim() == "" || country.trim() == "" || nationality.trim() == "" || acctName.trim() == "" || email.trim() == "" ||  bankName.trim() == "" || acctNumber.trim() == "" || acctType.trim() == "" || amount == "" || duration < 1 || paymentReference.trim() == "") {
+        let { name, phone, username, address, city, state, country, nationality, acctName, bankName, email, acctNumber, acctType, amount, duration, paymentReference,  refCode } = req.body
+        if (name.trim() == "" || phone.trim() == "" || username.trim() == "" || address.trim() == "" || city.trim() == "" || state.trim() == "" || country.trim() == "" || nationality.trim() == "" || acctName.trim() == "" || email.trim() == "" || bankName.trim() == "" || acctNumber.trim() == "" || acctType.trim() == "" || amount == "" || duration < 1 || paymentReference.trim() == "") {
             response = new BaseResponse(failureStatus, "One or more fields are empty", failureCode, {})
             return res.status(400)
                 .send(response)
         }
-
+        console.log(refCode)
         try {
+            let members = await Models.Members.findOne({
+                where: {
+                    referral_id: refCode
+                }
+            })
             let newInvestment = await Models.ExternalInvestment.create({
                 name: name,
                 phone: phone,
@@ -36,7 +41,10 @@ module.exports = {
                 email: email,
                 isRedeemed: false,
                 account_type: acctType,
-                date_created: convertDate(Date.now())
+                date_created: convertDate(Date.now()),
+                referralBank: members !== null && members !== undefined ? members.bank_name : null,
+                referralAccount: members !== null && members !== undefined ? members.account_number : null,
+                referralName: members !== null && members !== undefined ? members.account_name : null
             })
 
             response = new BaseResponse(successStatus, "Successful", successCode, {})
@@ -92,7 +100,7 @@ module.exports = {
         if (email && email !== "") {
             whereObj.email = email
         }
-        
+
         try {
             let allInvestments = await Models.ExternalInvestment.findAndCountAll({
                 where: whereObj,

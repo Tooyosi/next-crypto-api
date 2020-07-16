@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router({mergeParams: true})
 const fisController = require('../../controllers/fis/index')
+const {protected, refresh, isAdmin} = require('../../middleware/index')
+const expressJwt = require('express-jwt');  
+const authenticate = expressJwt({secret : process.env.SESSION_SECRET});
 /**
  * @swagger
  * tags:
@@ -45,6 +48,45 @@ router.get('/', fisController.loadFis)
 *         description: Bad Request.
 */
 router.get('/currencies', fisController.loadCurrencies)
+
+/**
+* @swagger
+* /fis/currencies/{id}:
+*   put:
+*     summary:  Edits tradable currency rate.
+*     tags: [Fis]
+*     description: This Route Ediy ratets a tradable currenc.
+*     consumes:
+*       — application/json
+*     parameters:
+*       - in: path
+*         name: id   
+*         required: true
+*         schema:
+*           type: integer
+*           minimum: 1
+*           description: The user id
+*       - in: body
+*         name: body   
+*         required: true
+*         schema:
+*            type: object
+*            required:
+*              -buyRate
+*              -sellRate
+*            properties:
+*              buyRate:
+*                type: string
+*              sellRate:
+*                type: string
+*     responses: 
+*       200:
+*         description: Receive back flavor and flavor Id.
+*       400:
+*         description: Bad Request.
+*/
+router.put('/currencies/:id',authenticate, protected, refresh, isAdmin,  fisController.putCurrencyRate)
+
 
 /**
 * @swagger

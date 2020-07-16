@@ -104,7 +104,19 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true,
       comment: "null"
-    }
+    }, 
+    'referralBank':{
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    'referralAccount':{
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    'referralName':{
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
   }, {
     tableName: 'external_investment'
   });
